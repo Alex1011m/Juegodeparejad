@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego para Parejas - Estilos</title>
+    <title>Juego para Parejas</title>
     <!-- Configuración de Tailwind para el modo oscuro -->
     <script>
         tailwind.config = {
@@ -24,7 +24,7 @@
             text-shadow: 3px 3px 6px rgba(0,0,0,0.2);
         }
         .dark .text-shadow-lg {
-            text-shadow: 0 0 10px rgba(255, 0, 150, 0.7), 0 0 20px rgba(255, 0, 150, 0.5);
+            text-shadow: 0 0 10px rgba(var(--accent-color-rgb), 0.7), 0 0 20px rgba(var(--accent-color-rgb), 0.5);
         }
         .animate-pulse-slow {
             animation: pulse-slow 3s infinite;
@@ -37,10 +37,18 @@
                 transform: scale(1.02);
             }
         }
-        .dark-mode-toggle {
+        .top-bar-container {
             position: absolute;
             top: 1rem;
             right: 1rem;
+            left: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            z-index: 10;
+        }
+        .back-button {
             width: 3rem;
             height: 3rem;
             border-radius: 50%;
@@ -48,44 +56,159 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            z-index: 10;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .settings-button, .dark-mode-toggle {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #progress-bar-container {
+            height: 10px;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            height: 100%;
+            transition: width 0.5s ease-in-out;
+            background-color: var(--accent-color);
+        }
+        .dark #progress-bar {
+            background-color: var(--accent-color);
+        }
+        .level-card {
+            transition: transform 0.2s ease-in-out;
+            border: 2px solid transparent;
+        }
+        .level-card:hover {
+            transform: scale(1.05);
+            border: 2px solid var(--accent-color);
+        }
+        .color-picker-button {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+        }
+        .color-picker-button:hover {
+            transform: scale(1.1);
+            border: 2px solid #fff;
+        }
+        .color-picker-button.active {
+            transform: scale(1.2);
+            border: 3px solid #fff;
+        }
+        .prize-input-container {
+            display: none;
+        }
+        .prize-input-container.active {
+            display: block;
+        }
+        .gemini-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            border-radius: 9999px;
+            background-color: #fce7f3;
+            color: #ec4899;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+        .dark .gemini-button {
+            background-color: #27272a;
+            color: #a855f7;
+        }
+        .gemini-button:hover {
+            transform: scale(1.1);
+        }
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 1.5rem;
+            height: 1.5rem;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center p-4 transition-colors duration-500">
-    <div onclick="toggleDarkMode()" class="dark-mode-toggle bg-white dark:bg-gray-800 text-gray-800 dark:text-yellow-400 shadow-lg">
-        <!-- Icono de Sol / Luna -->
-        <svg id="moon-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"></path>
-        </svg>
-        <svg id="sun-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2.25a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.52 7.52a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06L7.52 7.52zM3 12a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5H3.75A.75.75 0 013 12zM7.52 16.48a.75.75 0 01-1.06 1.06l-1.77-1.77a.75.75 0 011.06-1.06l1.77 1.77zM12 18.25a.75.75 0 01-.75.75v2.5a.75.75 0 011.5 0v-2.5a.75.75 0 01-.75-.75zM16.48 16.48a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06l-1.77-1.77zM18.25 12a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5h-2.5a.75.75 0 01-.75-.75zM16.48 7.52a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06l-1.77-1.77z"></path>
-        </svg>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center p-4 transition-colors duration-500" style="--accent-color: #ec4899; --accent-color-rgb: 236, 72, 153;">
+    <div class="top-bar-container">
+        <div id="back-button-container" class="hidden">
+            <button onclick="goBack()" class="back-button bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </button>
+        </div>
+        <div class="flex items-center gap-4">
+            <select id="language-select" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+            </select>
+            <div onclick="toggleSettingsModal()" class="settings-button bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8h12M4 14v4m0-4a2 2 0 100 4m0-4a2 2 0 110 4m16 0v4m0-4a2 2 0 100 4m0-4a2 2 0 110 4m-6-8h12m-6-8v-2m0 2a2 2 0 100-4m0 4a2 2 0 110-4" />
+                </svg>
+            </div>
+            <div onclick="toggleDarkMode()" class="dark-mode-toggle bg-white dark:bg-gray-800 text-gray-800 dark:text-yellow-400">
+                <svg id="moon-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"></path>
+                </svg>
+                <svg id="sun-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.25a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.52 7.52a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06L7.52 7.52zM3 12a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5H3.75A.75.75 0 013 12zM7.52 16.48a.75.75 0 01-1.06 1.06l-1.77-1.77a.75.75 0 011.06-1.06l1.77 1.77zM12 18.25a.75.75 0 01-.75.75v2.5a.75.75 0 011.5 0v-2.5a.75.75 0 01-.75-.75zM16.48 16.48a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06l-1.77-1.77zM18.25 12a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5h-2.5a.75.75 0 01-.75-.75zM16.48 7.52a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06l-1.77-1.77z"></path>
+                </svg>
+            </div>
+        </div>
     </div>
     <div id="game-container" class="w-full max-w-4xl bg-white dark:bg-gray-800 p-6 md:p-10 rounded-3xl shadow-2xl flex flex-col items-center text-center transition-all duration-500 transform scale-100 animate-pulse-slow">
         <!-- Pantalla de inicio -->
         <div id="start-screen" class="space-y-6 w-full">
-            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-red-500 dark:from-fuchsia-400 dark:to-cyan-400 mb-2 text-shadow-lg">Juego para Parejas <span id="heart-icon" class="transition-colors duration-1000">❤️</span></h1>
-            <p class="text-gray-600 dark:text-gray-400 text-sm">Desarrollador: PandA</p>
-            <p class="text-gray-600 dark:text-gray-400 text-lg">Un juego de trivia y desafíos para descubrir y celebrar su conexión.</p>
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-red-500 dark:from-fuchsia-400 dark:to-cyan-400 mb-2 text-shadow-lg" id="main-title">Juego para Parejas <span id="heart-icon" class="transition-colors duration-1000">❤️</span></h1>
+            <p class="text-gray-600 dark:text-gray-400 text-sm" id="developer-note">Desarrollador: PandA</p>
+            <p class="text-gray-600 dark:text-gray-400 text-lg" id="game-description">Un juego de trivia y desafíos para descubrir y celebrar su conexión.</p>
             <div class="space-y-4">
-                <input type="text" id="player1-name" placeholder="Nombre del Jugador 1" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md">
-                <input type="text" id="player2-name" placeholder="Nombre del Jugador 2" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md">
+                <input type="text" id="player1-name" placeholder="Nombre del Jugador 1" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md" oninput="togglePrizeInput(1)">
+                <div id="player1-prize-container" class="prize-input-container">
+                    <div class="flex items-center gap-2">
+                         <input type="text" id="player1-prize" placeholder="Si gano, quiero que..." class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md">
+                         <button onclick="generatePrizeIdea(1)" class="gemini-button text-xl">✨</button>
+                    </div>
+                </div>
+                <input type="text" id="player2-name" placeholder="Nombre del Jugador 2" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md" oninput="togglePrizeInput(2)">
+                <div id="player2-prize-container" class="prize-input-container">
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="player2-prize" placeholder="Si gano, quiero que..." class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md">
+                        <button onclick="generatePrizeIdea(2)" class="gemini-button text-xl">✨</button>
+                    </div>
+                </div>
             </div>
-            <button onclick="startGame()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105">Empezar a Jugar ✨</button>
+            <button onclick="startGame()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105" id="start-button">Empezar a Jugar ✨</button>
         </div>
 
         <!-- Pantalla de selección de nivel -->
         <div id="level-screen" class="hidden space-y-6 w-full">
-            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Elige tu modo de juego</h2>
+            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100" id="level-title">Elige tu modo de juego</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Modo Conexión -->
                 <div class="level-card bg-pink-400 dark:bg-fuchsia-600 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105">
                     <div>
-                        <h3 class="text-2xl font-bold">Nivel 1: Conexión 🥰</h3>
-                        <p class="text-sm mt-2 font-normal">Preguntas suaves y divertidas para conocerse mejor y fortalecer su vínculo.</p>
+                        <h3 class="text-2xl font-bold" id="level1-title">Nivel 1: Conexión 🥰</h3>
+                        <p class="text-sm mt-2 font-normal" id="level1-desc">Preguntas suaves y divertidas para conocerse mejor y fortalecer su vínculo.</p>
                     </div>
-                    <button onclick="selectLevel(1)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-700 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-800 transition-all">
+                    <button onclick="selectLevel(1)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-700 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-800 transition-all" id="level1-button">
                         ¡A jugar!
                     </button>
                 </div>
@@ -93,10 +216,10 @@
                 <!-- Modo Pasión -->
                 <div class="level-card bg-rose-500 dark:bg-violet-600 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105">
                     <div>
-                        <h3 class="text-2xl font-bold">Nivel 2: Pasión 🔥</h3>
-                        <p class="text-sm mt-2 font-normal">Suban un poco la temperatura con desafíos y preguntas más íntimas.</p>
+                        <h3 class="text-2xl font-bold" id="level2-title">Nivel 2: Pasión 🔥</h3>
+                        <p class="text-sm mt-2 font-normal" id="level2-desc">Suban un poco la temperatura con desafíos y preguntas más íntimas.</p>
                     </div>
-                    <button onclick="selectLevel(2)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-rose-600 dark:bg-violet-700 rounded-full shadow-lg hover:bg-rose-700 dark:hover:bg-violet-800 transition-all">
+                    <button onclick="selectLevel(2)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-rose-600 dark:bg-violet-700 rounded-full shadow-lg hover:bg-rose-700 dark:hover:bg-violet-800 transition-all" id="level2-button">
                         ¡Vamos!
                     </button>
                 </div>
@@ -104,10 +227,10 @@
                 <!-- Modo Aventura -->
                 <div class="level-card bg-red-600 dark:bg-cyan-600 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105">
                     <div>
-                        <h3 class="text-2xl font-bold">Nivel 3: Aventura 😈</h3>
-                        <p class="text-sm mt-2 font-normal">Lleven las cosas a un nivel atrevido y excitante. ¡Solo para los valientes!</p>
+                        <h3 class="text-2xl font-bold" id="level3-title">Nivel 3: Aventura 😈</h3>
+                        <p class="text-sm mt-2 font-normal" id="level3-desc">Lleven las cosas a un nivel atrevido y excitante. ¡Solo para los valientes!</p>
                     </div>
-                    <button onclick="selectLevel(3)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-red-700 dark:bg-cyan-700 rounded-full shadow-lg hover:bg-red-800 dark:hover:bg-cyan-800 transition-all">
+                    <button onclick="selectLevel(3)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-red-700 dark:bg-cyan-700 rounded-full shadow-lg hover:bg-red-800 dark:hover:bg-cyan-800 transition-all" id="level3-button">
                         ¡Atrévete!
                     </button>
                 </div>
@@ -115,10 +238,10 @@
                 <!-- Modo Variado -->
                 <div class="level-card bg-purple-500 dark:bg-indigo-600 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105 md:col-span-2 lg:col-span-1">
                     <div>
-                        <h3 class="text-2xl font-bold">Modo Variado 🎲</h3>
-                        <p class="text-sm mt-2 font-normal">Un mix al azar de todos los niveles. ¡Nunca sabrán qué sigue!</p>
+                        <h3 class="text-2xl font-bold" id="level0-title">Modo Variado 🎲</h3>
+                        <p class="text-sm mt-2 font-normal" id="level0-desc">Un mix al azar de todos los niveles. ¡Nunca sabrán qué sigue!</p>
                     </div>
-                    <button onclick="selectLevel(0)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-purple-600 dark:bg-indigo-700 rounded-full shadow-lg hover:bg-purple-700 dark:hover:bg-indigo-800 transition-all">
+                    <button onclick="selectLevel(0)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-purple-600 dark:bg-indigo-700 rounded-full shadow-lg hover:bg-purple-700 dark:hover:bg-indigo-800 transition-all" id="level0-button">
                         ¡Sorpréndete!
                     </button>
                 </div>
@@ -126,10 +249,10 @@
                 <!-- Modo Solo Preguntas -->
                 <div class="level-card bg-blue-500 dark:bg-blue-700 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105 md:col-span-2 lg:col-span-1">
                     <div>
-                        <h3 class="text-2xl font-bold">Modo Solo Preguntas 🗣️</h3>
-                        <p class="text-sm mt-2 font-normal">Un modo centrado en la comunicación. Solo recibirán preguntas de todos los niveles.</p>
+                        <h3 class="text-2xl font-bold" id="level4-title">Modo Solo Preguntas 🗣️</h3>
+                        <p class="text-sm mt-2 font-normal" id="level4-desc">Un modo centrado en la comunicación. Solo recibirán preguntas de todos los niveles.</p>
                     </div>
-                    <button onclick="selectLevel(4)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-blue-600 dark:bg-blue-800 rounded-full shadow-lg hover:bg-blue-700 dark:hover:bg-blue-900 transition-all">
+                    <button onclick="selectLevel(4)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-blue-600 dark:bg-blue-800 rounded-full shadow-lg hover:bg-blue-700 dark:hover:bg-blue-900 transition-all" id="level4-button">
                         ¡A Hablar!
                     </button>
                 </div>
@@ -137,34 +260,70 @@
                 <!-- Modo Solo Retos -->
                 <div class="level-card bg-orange-500 dark:bg-amber-600 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105 md:col-span-2 lg:col-span-1">
                     <div>
-                        <h3 class="text-2xl font-bold">Modo Solo Retos 🤸</h3>
-                        <p class="text-sm mt-2 font-normal">¡Para cuando solo quieren acción! Retos físicos y divertidos de todos los niveles.</p>
+                        <h3 class="text-2xl font-bold" id="level5-title">Modo Solo Retos 🤸</h3>
+                        <p class="text-sm mt-2 font-normal" id="level5-desc">¡Para cuando solo quieren acción! Retos físicos y divertidos de todos los niveles.</p>
                     </div>
-                    <button onclick="selectLevel(5)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-orange-600 dark:bg-amber-700 rounded-full shadow-lg hover:bg-orange-700 dark:hover:bg-amber-800 transition-all">
+                    <button onclick="selectLevel(5)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-orange-600 dark:bg-amber-700 rounded-full shadow-lg hover:bg-orange-700 dark:hover:bg-amber-800 transition-all" id="level5-button">
                         ¡A Retar!
+                    </button>
+                </div>
+
+                <!-- Modo Progresivo -->
+                <div class="level-card bg-teal-500 dark:bg-teal-700 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105 md:col-span-2 lg:col-span-1">
+                    <div>
+                        <h3 class="text-2xl font-bold" id="level6-title">Modo Progresivo 📈</h3>
+                        <p class="text-sm mt-2 font-normal" id="level6-desc">El juego empieza suave y se vuelve más atrevido con el tiempo.</p>
+                    </div>
+                    <button onclick="selectLevel(6)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-teal-600 dark:bg-teal-800 rounded-full shadow-lg hover:bg-teal-700 dark:hover:bg-teal-900 transition-all" id="level6-button">
+                        ¡Avanza!
+                    </button>
+                </div>
+
+                <!-- Modo Personalizado -->
+                <div class="level-card bg-yellow-500 dark:bg-lime-600 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105 md:col-span-2 lg:col-span-1">
+                    <div>
+                        <h3 class="text-2xl font-bold" id="level7-title">Modo Personalizado ✏️</h3>
+                        <p class="text-sm mt-2 font-normal" id="level7-desc">Creen su propio banco de preguntas y retos para una experiencia única.</p>
+                    </div>
+                    <button onclick="selectLevel(7)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-yellow-600 dark:bg-lime-700 rounded-full shadow-lg hover:bg-yellow-700 dark:hover:bg-lime-800 transition-all" id="level7-button">
+                        ¡A crear!
                     </button>
                 </div>
             </div>
         </div>
 
+        <!-- Pantalla de creación de retos -->
+        <div id="create-game-screen" class="hidden space-y-6 w-full">
+            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100" id="create-title">Crea tus propias preguntas y retos</h2>
+            <div class="space-y-4">
+                <textarea id="custom-question-input" placeholder="Escribe tu pregunta o reto aquí..." class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-yellow-500 dark:focus:ring-lime-400 transition-all shadow-md min-h-[150px]"></textarea>
+                <button onclick="addCustomQuestion()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-yellow-500 dark:bg-lime-600 rounded-full shadow-lg hover:bg-yellow-600 dark:hover:bg-lime-700 transition-all transform hover:scale-105" id="add-question-button">
+                    Agregar a mi juego ✨
+                </button>
+            </div>
+            <button onclick="startCustomGame()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105" id="play-custom-button">¡Jugar con mis retos! 🎉</button>
+        </div>
+
         <!-- Pantalla de selección de rondas -->
         <div id="rounds-screen" class="hidden space-y-6 w-full">
-            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100">¿Cuántas rondas quieren jugar?</h2>
+            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100" id="rounds-title">¿Cuántas rondas quieren jugar?</h2>
             <div class="space-y-4">
                 <select id="total-rounds-select" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md">
-                    <option value="5">5 Rondas</option>
-                    <option value="10" selected>10 Rondas</option>
-                    <option value="15">15 Rondas</option>
-                    <option value="20">20 Rondas</option>
-                    <option value="30">30 Rondas</option>
-                    <option value="50">50 Rondas (Largo)</option>
+                    <option value="5" id="option-5-rounds"></option>
+                    <option value="10" selected id="option-10-rounds"></option>
+                    <option value="15" id="option-15-rounds"></option>
+                    <option value="20" id="option-20-rounds"></option>
+                    <option value="30" id="option-30-rounds"></option>
                 </select>
             </div>
-            <button onclick="selectRounds()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105">¡Empezar Partida! 🎉</button>
+            <button onclick="selectRounds()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105" id="start-game-button">¡Empezar Partida! 🎉</button>
         </div>
         
         <!-- Pantalla de juego -->
         <div id="game-screen" class="hidden space-y-6 w-full">
+            <div id="progress-bar-container" class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-4">
+                <div id="progress-bar" class="bg-pink-600 h-2.5 rounded-full dark:bg-fuchsia-500 transition-all duration-500 ease-in-out" style="width: 0%;"></div>
+            </div>
             <div class="flex items-center justify-between w-full mb-4">
                 <div class="flex flex-col items-start">
                     <span id="player1-score-display" class="text-sm font-semibold text-gray-500 dark:text-gray-400"></span>
@@ -182,312 +341,1122 @@
                 <p id="question-text" class="text-2xl text-gray-800 dark:text-gray-100 font-semibold leading-relaxed"></p>
             </div>
             <div id="action-buttons" class="w-full flex justify-center space-x-4 mt-6">
-                <button onclick="addPointAndNext()" class="flex-1 py-4 px-6 text-lg font-semibold text-white bg-green-500 dark:bg-emerald-500 rounded-full shadow-lg hover:bg-green-600 dark:hover:bg-emerald-600 transition-all transform hover:scale-105">
+                <button onclick="addPointAndNext()" class="flex-1 py-4 px-6 text-lg font-semibold text-white bg-green-500 dark:bg-emerald-500 rounded-full shadow-lg hover:bg-green-600 dark:hover:bg-emerald-600 transition-all transform hover:scale-105" id="win-button">
                     ¡Lo logré! 🎉
                 </button>
-                <button onclick="nextQuestion()" class="flex-1 py-4 px-6 text-lg font-semibold text-white bg-gray-400 dark:bg-gray-600 rounded-full shadow-lg hover:bg-gray-500 dark:hover:bg-gray-700 transition-all transform hover:scale-105">
+                <button onclick="passWithConsequence()" class="flex-1 py-4 px-6 text-lg font-semibold text-white bg-gray-400 dark:bg-gray-600 rounded-full shadow-lg hover:bg-gray-500 dark:hover:bg-gray-700 transition-all transform hover:scale-105" id="pass-button">
                     Pasar ➡️
                 </button>
             </div>
-            <button onclick="restartGame()" class="mt-4 text-pink-500 hover:text-pink-700 dark:text-fuchsia-400 dark:hover:text-fuchsia-500 transition-colors">Reiniciar</button>
+             <div class="mt-4 flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+                <button onclick="readQuestion()" class="py-2 px-4 text-sm font-semibold text-white bg-blue-500 dark:bg-blue-600 rounded-full shadow-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-all transform hover:scale-105" id="read-button">Leer Pregunta ✨</button>
+                <button onclick="generateQuestionWithGemini()" class="py-2 px-4 text-sm font-semibold text-white bg-purple-500 dark:bg-purple-600 rounded-full shadow-lg hover:bg-purple-600 dark:hover:bg-purple-700 transition-all transform hover:scale-105" id="gemini-question-button">Nueva Pregunta ✨</button>
+            </div>
+            <button onclick="restartGame()" class="mt-4 text-pink-500 hover:text-pink-700 dark:text-fuchsia-400 dark:hover:text-fuchsia-500 transition-colors" id="restart-button">Reiniciar</button>
         </div>
         
         <!-- Pantalla final -->
         <div id="end-screen" class="hidden space-y-6 w-full">
-            <h2 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-red-500 dark:from-fuchsia-400 dark:to-cyan-400 mb-2">¡Fin del Juego! 🏁</h2>
+            <h2 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-red-500 dark:from-fuchsia-400 dark:to-cyan-400 mb-2" id="end-title">¡Fin del Juego! 🏁</h2>
             <p id="winner-message" class="text-2xl font-semibold text-gray-800 dark:text-gray-100"></p>
             <p id="final-scores" class="text-xl text-gray-600 dark:text-gray-400"></p>
-            <p class="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mt-4">El perdedor debe cumplir una petición del ganador. ¡Elijan con sabiduría! 😏</p>
-            <button onclick="restartGame()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105">Jugar de Nuevo ✨</button>
+            <p class="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mt-4" id="end-message"></p>
+            <button onclick="restartGame()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105" id="play-again-button">Jugar de Nuevo ✨</button>
         </div>
 
         <!-- Modal de consentimiento -->
         <div id="consent-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
             <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm">
-                <h3 class="text-3xl font-bold text-red-600 dark:text-cyan-400 mb-4">¡Importante! ⚠️</h3>
-                <p class="text-gray-700 dark:text-gray-300 mb-6 text-lg leading-relaxed">
-                    Las preguntas en este modo son más atrevidas. La comunicación y el respeto son la clave. Si en algún momento no se sienten cómodos, pueden saltar la pregunta o terminar el juego.
-                    <br><br>
-                    <span class="font-bold">¡El consentimiento es sexy! 😉</span>
+                <h3 class="text-3xl font-bold text-red-600 dark:text-cyan-400 mb-4" id="consent-title"></h3>
+                <p class="text-gray-700 dark:text-gray-300 mb-6 text-lg leading-relaxed" id="consent-message">
                 </p>
-                <button onclick="closeConsentModal()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-red-600 dark:bg-cyan-600 rounded-full shadow-lg hover:bg-red-700 dark:hover:bg-cyan-700 transition-all transform hover:scale-105">Entendido, ¡continuar! 👍</button>
+                <button onclick="closeConsentModal()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-red-600 dark:bg-cyan-600 rounded-full shadow-lg hover:bg-red-700 dark:hover:bg-cyan-700 transition-all transform hover:scale-105" id="consent-button"></button>
+            </div>
+        </div>
+        
+        <!-- Modal de alerta -->
+        <div id="alert-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4" id="alert-title"></h3>
+                <p class="text-gray-700 dark:text-gray-300 mb-6" id="alert-message"></p>
+                <button onclick="closeAlertModal()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105" id="alert-button"></button>
+            </div>
+        </div>
+
+        <!-- Modal de configuración -->
+        <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4" id="settings-title">Configuración</h3>
+                <p class="text-gray-700 dark:text-gray-300 mb-4" id="theme-label">Elige un color de tema:</p>
+                <div id="color-picker" class="flex justify-center space-x-2">
+                    <button class="color-picker-button bg-pink-500 active" onclick="setAccentColor('#ec4899', '236, 72, 153', this)"></button>
+                    <button class="color-picker-button bg-blue-500" onclick="setAccentColor('#3b82f6', '59, 130, 246', this)"></button>
+                    <button class="color-picker-button bg-green-500" onclick="setAccentColor('#22c55e', '34, 197, 94', this)"></button>
+                    <button class="color-picker-button bg-purple-500" onclick="setAccentColor('#a855f7', '168, 85, 247', this)"></button>
+                    <button class="color-picker-button bg-red-500" onclick="setAccentColor('#ef4444', '239, 68, 68', this)"></button>
+                </div>
+                <div class="flex items-center justify-center space-x-2 mt-6">
+                    <div onclick="toggleDarkMode()" class="dark-mode-toggle bg-white dark:bg-gray-800 text-gray-800 dark:text-yellow-400">
+                        <svg id="moon-icon-settings" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"></path>
+                        </svg>
+                        <svg id="sun-icon-settings" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2.25a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.52 7.52a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06L7.52 7.52zM3 12a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5H3.75A.75.75 0 013 12zM7.52 16.48a.75.75 0 01-1.06 1.06l-1.77-1.77a.75.75 0 011.06-1.06l1.77 1.77zM12 18.25a.75.75 0 01-.75.75v2.5a.75.75 0 011.5 0v-2.5a.75.75 0 01-.75-.75zM16.48 16.48a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06l-1.77-1.77zM18.25 12a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5h-2.5a.75.75 0 01-.75-.75zM16.48 7.52a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06l-1.77-1.77z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <button onclick="closeSettingsModal()" class="w-full py-3 px-6 mt-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105" id="close-settings-button">Cerrar</button>
             </div>
         </div>
     </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        setLogLevel('debug');
+        
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-    <script>
-        const gameContainer = document.getElementById('game-container');
+        let userId = null;
+        window.db = db;
+        window.appId = appId;
+        
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                console.log("User is signed in with UID:", userId);
+            } else {
+                console.log("No user is signed in. Attempting anonymous sign-in.");
+                try {
+                    await signInAnonymously(auth);
+                    userId = auth.currentUser.uid;
+                    console.log("Anonymous sign-in successful. UID:", userId);
+                } catch (error) {
+                    console.error("Anonymous sign-in failed:", error);
+                }
+            }
+            window.userId = userId;
+            window.loadGame();
+        });
+        
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            signInWithCustomToken(auth, __initial_auth_token).catch((error) => {
+                console.error("Error signing in with custom token:", error);
+            });
+        }
+        
+        window.getCustomQuestions = async () => {
+            if (!window.userId) return [];
+            try {
+                const q = query(collection(db, `artifacts/${appId}/users/${userId}/custom_questions`));
+                const querySnapshot = await getDocs(q);
+                return querySnapshot.docs.map(doc => doc.data().question);
+            } catch (error) {
+                console.error("Error getting custom questions:", error);
+                return [];
+            }
+        };
+
+        window.saveCustomQuestion = async (question) => {
+            if (!window.userId) return;
+            try {
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/custom_questions`), {
+                    question: question,
+                    timestamp: new Date()
+                });
+                console.log("Question saved:", question);
+            } catch (error) {
+                console.error("Error saving custom question:", error);
+            }
+        };
+
+        window.saveGameState = async (state) => {
+            if (!window.userId) return;
+            try {
+                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/game_state/current_game`), state);
+            } catch (error) {
+                console.error("Error saving game state:", error);
+            }
+        };
+
+        window.loadGameState = async () => {
+            if (!window.userId) return null;
+            try {
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/game_state/current_game`);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    return docSnap.data();
+                } else {
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error loading game state:", error);
+                return null;
+            }
+        };
+
+        // Array de colores para el corazón
+        const heartColors = ['#f472b6', '#ef4444', '#ec4899', '#a855f7', '#06b6d4'];
+        let currentColorIndex = 0;
+        const heartIcon = document.getElementById('heart-icon');
+
+        function changeHeartColor() {
+            if (heartIcon) {
+                currentColorIndex = (currentColorIndex + 1) % heartColors.length;
+                heartIcon.style.color = heartColors[currentColorIndex];
+            }
+        }
+
+        setInterval(changeHeartColor, 1000);
+
+        // Referencias a los elementos del DOM
         const startScreen = document.getElementById('start-screen');
         const levelScreen = document.getElementById('level-screen');
         const roundsScreen = document.getElementById('rounds-screen');
         const gameScreen = document.getElementById('game-screen');
         const endScreen = document.getElementById('end-screen');
+        const createGameScreen = document.getElementById('create-game-screen');
         const consentModal = document.getElementById('consent-modal');
-        const player1Input = document.getElementById('player1-name');
-        const player2Input = document.getElementById('player2-name');
-        const totalRoundsSelect = document.getElementById('total-rounds-select');
+        const backButtonContainer = document.getElementById('back-button-container');
+        const alertModal = document.getElementById('alert-modal');
+        const settingsModal = document.getElementById('settings-modal');
+
+        const player1NameInput = document.getElementById('player1-name');
+        const player2NameInput = document.getElementById('player2-name');
+        const player1PrizeInput = document.getElementById('player1-prize');
+        const player2PrizeInput = document.getElementById('player2-prize');
+        const player1PrizeContainer = document.getElementById('player1-prize-container');
+        const player2PrizeContainer = document.getElementById('player2-prize-container');
         const player1ScoreDisplay = document.getElementById('player1-score-display');
         const player2ScoreDisplay = document.getElementById('player2-score-display');
-        const playerTurnSpan = document.getElementById('player-turn');
+        const playerTurnDisplay = document.getElementById('player-turn');
+        const roundDisplay = document.getElementById('round-display');
         const questionText = document.getElementById('question-text');
         const winnerMessage = document.getElementById('winner-message');
         const finalScores = document.getElementById('final-scores');
-        const sunIcon = document.getElementById('sun-icon');
-        const moonIcon = document.getElementById('moon-icon');
-        const roundDisplay = document.getElementById('round-display');
+        const endMessage = document.getElementById('end-message');
+        const totalRoundsSelect = document.getElementById('total-rounds-select');
         const timerDisplay = document.getElementById('timer-display');
-        const heartIcon = document.getElementById('heart-icon');
-
-        let players = [];
-        let currentPlayerIndex = 0;
-        let currentLevel = 0;
-        let questions = [];
-        let totalRounds = 10;
+        const progressBar = document.getElementById('progress-bar');
+        const languageSelect = document.getElementById('language-select');
+        const clickSound = new Audio('https://cdn.pixabay.com/audio/2023/12/03/audio_f83f2a2818.mp3'); 
+        
+        // Variables del juego
+        let player1Name, player2Name, player1Prize, player2Prize;
+        let player1Score = 0;
+        let player2Score = 0;
+        let currentPlayer = 1;
         let currentRound = 1;
+        let totalRounds = 10;
+        let currentLevel = 1;
         let timerInterval;
-        const TIME_LIMIT = 30; // Segundos
+        let timeLeft = 30;
+        let usedQuestions = {};
+        let customQuestions = [];
+        let allQuestions = [];
 
-        // Colores para el corazón
-        const heartColors = ['text-red-500', 'text-pink-500', 'text-fuchsia-500', 'text-purple-500', 'text-indigo-500', 'text-cyan-500'];
-        let currentColorIndex = 0;
-
-        // Función para cambiar el color del corazón
-        function changeHeartColor() {
-            heartIcon.classList.remove(heartColors[currentColorIndex]);
-            currentColorIndex = (currentColorIndex + 1) % heartColors.length;
-            heartIcon.classList.add(heartColors[currentColorIndex]);
-        }
-
-        // Inicia el cambio de color del corazón al cargar la página
-        setInterval(changeHeartColor, 1500);
-
-        // Base de datos de preguntas y desafíos
-        const allQuestions = [
-            // Nivel 1: Inicia la Conversación
-            { type: 'trivia', level: 1, question: '¿Cuál es la película que más has visto y por qué?' },
-            { type: 'trivia', level: 1, question: 'Si pudieras viajar a cualquier lugar del mundo ahora mismo, ¿a dónde irías y con quién?' },
-            { type: 'trivia', level: 1, question: '¿Qué es lo que más admiras del otro?' },
-            { type: 'trivia', level: 1, question: '¿Cuál es tu recuerdo más feliz de nuestra relación hasta ahora?' },
-            { type: 'dare', level: 1, question: 'Dale a tu pareja un masaje de hombros de 60 segundos.' },
-            { type: 'trivia', level: 1, question: 'Si tuvieras un superpoder, ¿cuál sería?' },
-            { type: 'trivia', level: 1, question: '¿Qué canción te recuerda a nosotros?' },
-            { type: 'dare', level: 1, question: 'Escribe un mensaje en la espalda de tu pareja con el dedo para que lo adivine.' },
-            { type: 'trivia', level: 1, question: '¿Cuál es tu cita ideal?' },
-            { type: 'trivia', level: 1, question: '¿Qué harías si ganaras la lotería?' },
-            { type: 'trivia', level: 1, question: '¿Qué es lo que más te hace reír de mí?' },
-            { type: 'dare', level: 1, question: 'Canta una canción romántica para tu pareja, pero solo con el ritmo.' },
-
-            // Nivel 2: Explora Juntos
-            { type: 'trivia', level: 2, question: '¿Cuál es un momento en el que te sentiste especialmente conectado/a conmigo?' },
-            { type: 'trivia', level: 2, question: '¿Qué es algo que te gustaría hacer más en nuestra relación?' },
-            { type: 'dare', level: 2, question: 'Besa a tu pareja en el cuello durante 15 segundos.' },
-            { type: 'trivia', level: 2, question: 'Describe tres cosas que te ponen nervioso/a y una que te relaja.' },
-            { type: 'dare', level: 2, question: 'Hazle cosquillas a tu pareja hasta que se rinda.' },
-            { type: 'trivia', level: 2, question: '¿Qué te atrajo de mí al principio?' },
-            { type: 'dare', level: 2, question: 'Dale un masaje de pies a tu pareja mientras le dices algo que amas de ella/él.' },
-            { type: 'trivia', level: 2, question: '¿Cuál es una fantasía que tienes que no me has contado?' },
-            { type: 'trivia', level: 2, question: '¿Qué es lo más aventurero que has hecho?' },
-            { type: 'dare', level: 2, question: 'Dale a tu pareja una bofetada en el trasero y un beso en el cuello.' },
-            { type: 'trivia', level: 2, question: '¿Qué es lo que más te gusta de nuestra vida sexual?' },
-            { type: 'dare', level: 2, question: 'Hagan una pose de yoga juntos, o una pose que les resulte divertida.' },
-
-            // Nivel 3: Sé Atrevido (con un tono más íntimo y sensual)
-            { type: 'trivia', level: 3, question: '¿Cuál es la parte de mi cuerpo que más te excita?' },
-            { type: 'dare', level: 3, question: 'Quítale una prenda de ropa a tu pareja usando solo la boca y las manos.' },
-            { type: 'trivia', level: 3, question: 'Describe tu fantasía sexual más audaz.' },
-            { type: 'dare', level: 3, question: 'Lame crema batida del cuerpo de tu pareja.' },
-            { type: 'trivia', level: 3, question: 'Si tuvieras que elegir una posición sexual para el resto de tu vida, ¿cuál sería?' },
-            { type: 'dare', level: 3, question: 'Ponte una venda en los ojos y deja que tu pareja te toque donde quiera.' },
-            { type: 'trivia', level: 3, question: '¿Qué es lo más salvaje que has hecho o quisieras hacer en la cama?' },
-            { type: 'dare', level: 3, question: 'Simula el sexo oral con una fruta o verdura.' },
-            { type: 'trivia', level: 3, question: '¿Qué es lo que más te gusta de nuestra vida sexual?' },
-            { type: 'dare', level: 3, question: '¡Desnúdate completamente y haz un baile provocador para tu pareja!' },
-            { type: 'trivia', level: 3, question: '¿Qué te hace sentir más sexy cuando estamos juntos?' },
-            { type: 'dare', level: 3, question: 'Toma un trago de una bebida y pásalo de boca a boca con tu pareja.' },
-            { type: 'dare', level: 3, question: 'Permite que tu pareja te venda los ojos y te dé tres besos sorpresa. Tienes que adivinar dónde te ha besado.' },
-            { type: 'trivia', level: 3, question: '¿Cuál es tu fantasía sexual de rol más secreta?' },
-            { type: 'dare', level: 3, question: 'Toma la mano de tu pareja y guía su tacto a una parte de tu cuerpo que te gusta que toquen, sin decir una palabra.' },
-            { type: 'trivia', level: 3, question: '¿Qué es algo que te gustaría probar sexualmente que no hemos hecho?' },
-            { type: 'dare', level: 3, question: 'Cierra los ojos y adivina con qué parte de mi cuerpo te estoy tocando.' },
-            { type: 'dare', level: 3, question: 'Dale a tu pareja un beso apasionado de al menos 10 segundos.' },
-            { type: 'trivia', level: 3, question: 'Describe un lugar donde te gustaría que te besara por primera vez.' },
-            { type: 'dare', level: 3, question: 'Haz un \'strip tease\' sensual, pero en cámara lenta, quitándote solo una prenda.' },
-            { type: 'dare', level: 3, question: 'Susurra en mi oído algo que te excita de mí.' },
-            { type: 'dare', level: 3, question: 'Baila conmigo una canción sensual, manteniéndote pegado a mí todo el tiempo.' },
-        ];
-        
-        // Función para barajar un array
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+        // Datos del juego (preguntas y retos) en español e inglés
+        const gameData = {
+            es: {
+                title: "Juego para Parejas",
+                developer: "Desarrollador: PandA",
+                description: "Un juego de trivia y desafíos para descubrir y celebrar su conexión.",
+                startButton: "Empezar a Jugar ✨",
+                levelTitle: "Elige tu modo de juego",
+                level1Title: "Nivel 1: Conexión 🥰",
+                level1Desc: "Preguntas suaves y divertidas para conocerse mejor y fortalecer su vínculo.",
+                level1Button: "¡A jugar!",
+                level2Title: "Nivel 2: Pasión 🔥",
+                level2Desc: "Suban un poco la temperatura con desafíos y preguntas más íntimas.",
+                level2Button: "¡Vamos!",
+                level3Title: "Nivel 3: Aventura 😈",
+                level3Desc: "Lleven las cosas a un nivel atrevido y excitante. ¡Solo para los valientes!",
+                level3Button: "¡Atrévete!",
+                level0Title: "Modo Variado 🎲",
+                level0Desc: "Un mix al azar de todos los niveles. ¡Nunca sabrán qué sigue!",
+                level0Button: "¡Sorpréndete!",
+                level4Title: "Modo Solo Preguntas 🗣️",
+                level4Desc: "Un modo centrado en la comunicación. Solo recibirán preguntas de todos los niveles.",
+                level4Button: "¡A Hablar!",
+                level5Title: "Modo Solo Retos 🤸",
+                level5Desc: "¡Para cuando solo quieren acción! Retos físicos y divertidos de todos los niveles.",
+                level5Button: "¡A Retar!",
+                level6Title: "Modo Progresivo 📈",
+                level6Desc: "El juego empieza suave y se vuelve más atrevido con el tiempo.",
+                level6Button: "¡Avanza!",
+                level7Title: "Modo Personalizado ✏️",
+                level7Desc: "Creen su propio banco de preguntas y retos para una experiencia única.",
+                level7Button: "¡A crear!",
+                roundsTitle: "¿Cuántas rondas quieren jugar?",
+                roundsOption: (r) => `${r} rondas`,
+                startGameButton: "¡Empezar Partida! 🎉",
+                playerPlaceholder: "Nombre del Jugador ",
+                prizePlaceholder: "Si gano, quiero que...",
+                winButton: "¡Lo logré! 🎉",
+                passButton: "Pasar ➡️",
+                restartButton: "Reiniciar",
+                endTitle: "¡Fin del Juego! 🏁",
+                playAgainButton: "Jugar de Nuevo ✨",
+                playerTurn: (p) => `Turno de ${p}`,
+                roundDisplay: (c, t) => `Ronda ${c} de ${t}`,
+                finalScoreMessage: (p1, s1, p2, s2) => `Puntuaciones finales: ${p1}: ${s1}, ${p2}: ${s2}`,
+                winMessage: (w, prize) => `${w} es el ganador! Ahora ${w} puede pedir: "${prize}".`,
+                drawMessage: "¡Es un empate! ¡Ambos deben cumplir un deseo del otro!",
+                noWinnerMessage: "Nadie ha ganado. ¡Ambos deben hacer un deseo para el otro!",
+                timeout: "¡Se acabó el tiempo!",
+                consentTitle: "¡Advertencia de Nivel 3!",
+                consentMessage: "Este nivel contiene retos que exploran la intimidad física. Recuerden siempre la importancia del consentimiento mutuo. Si algo no se siente bien, digan 'no' y pasen. ¡La comunicación es la clave!",
+                consentButton: "Entendido",
+                outOfQuestions: "¡Se han agotado las preguntas! Reinicia el juego o elige un modo diferente.",
+                alertTitle: "Error",
+                alertNames: "Por favor, ingresa los nombres de ambos jugadores.",
+                alertQuestions: "Por favor, agrega al menos 5 preguntas o retos para comenzar el modo personalizado.",
+                settingsTitle: "Configuración",
+                themeLabel: "Elige un color de tema:",
+                closeSettingsButton: "Cerrar",
+                questions: {
+                    1: [
+                        "¿Cuál es el recuerdo más gracioso que tienen juntos?", "Si pudieran viajar a cualquier lugar del mundo ahora mismo, ¿a dónde irían?", "Si tuvieras que describir su risa con una palabra, ¿cuál sería?", "¿Cuál es una canción que les recuerda el uno al otro?", "¿Qué superpoder elegirían tener juntos?", "Si pudieran pasar un día sin responsabilidades, ¿qué harían?", "¿Cuál es el mejor regalo que le has dado?", "¿Cuál es el mejor consejo que les han dado sobre el amor?", "¿Qué les hizo darse cuenta de que querían estar juntos?", "¿Qué es algo que has aprendido de tu pareja?", "¿Cuál es una meta que les gustaría lograr juntos en los próximos cinco años?", "¿Cuál es el hábito más adorable de tu pareja?", "¿Qué es algo que tu pareja hace que te hace sentir seguro/a?", "¿Cuál es un logro del que se sienten orgullosos como pareja?", "Si pudieran revivir un día de su relación, ¿cuál elegirían?", "¿Qué es lo que más extrañan hacer que hacían cuando empezaron a salir?", "¿Qué los hace sentir más conectados emocionalmente?", "¿Cuál es su broma interna favorita?", "¿Qué han aprendido el uno del otro sobre el amor?", "¿Qué es algo que te sorprende de tu pareja incluso hoy en día?", "¿Cuál es la forma más simple de hacerte feliz?", "¿Qué es algo que admiras profundamente de tu pareja?"
+                    ],
+                    2: [
+                        "Describan el momento más romántico que han compartido.", "¿Qué tipo de caricias te gustan?", "Nombren una fantasía que les gustaría cumplir juntos.", "¿Cuál es su lugar favorito para besarse?", "Dale un masaje en los hombros a tu pareja durante un minuto.", "¿Cuál es la parte del cuerpo de tu pareja que más te atrae?", "Describan su cita ideal para un día lluvioso.", "¿Qué los hace sentir más amados y deseados?", "Bésale en la parte del cuerpo que más te gusta.", "¿Qué los hace sentir más sensuales y confiados?", "Acaricia el cabello de tu pareja mientras le dices algo que te encanta de su personalidad.", "¿Cuál es su canción más sensual para bailar lento?", "Describan con tres palabras cómo se sienten cuando se besan.", "Nombren una fantasía no sexual que les gustaría vivir juntos.", "¿Qué es lo que más los excita en una cita romántica?", "Dense un beso que comience lento y se vuelva más apasionado.", "¿Cuál es el gesto más romántico que has hecho por tu pareja?", "Si tuvieran que elegir un sabor para su pasión, ¿cuál sería?", "Dale a tu pareja una caricia en la mano que se sienta como un beso.", "Besa la espalda de tu pareja mientras le susurras algo que te gustaría hacerle.", "Masajea los pies de tu pareja durante dos minutos mientras le hablas sobre lo que te atrae de ella.", "¿Cuál es tu fantasía de rol play menos sexual pero más sensual?", "Escribe un mensaje sensual en la espalda de tu pareja con tu dedo.", "Dale un beso largo y apasionado a tu pareja sin usar las manos.", "¿Cuál es la forma en que más te gusta que te toquen?", "Describan una fantasía que les gustaría cumplir si el tiempo y el lugar no fueran un problema."
+                    ],
+                    3: [
+                        "Describe un lugar inesperado donde les gustaría tener una cita atrevida.", "¿Cuál ha sido la fantasía más loca que han tenido?", "Besa el cuello de tu pareja de forma muy sensual.", "¿Qué juguete sexual te gustaría usar en pareja?", "Describe una posición en la que quieras probar.", "Cuéntale una fantasía erótica que tengas con tu pareja y cómo te gustaría que fuera.", "Besa cada dedo de los pies de tu pareja.", "Besa cada parte del cuerpo de tu pareja que no le hayas besado antes.", "Háblale a tu pareja con la voz más sensual que tengas y descríbele algo que te excita de ella.", "Jueguen a 'verdad o reto' pero solo con preguntas y desafíos picantes.", "Dale un beso a tu pareja en el ombligo, subiendo y bajando.", "Dile a tu pareja qué es lo que más te gusta de sus gemidos.", "Besa a tu pareja desde el cuello hasta el pecho de forma lenta.", "Haz que tu pareja gima de placer sin tocarla.", "Bésense apasionadamente con las manos de ambos atadas.", "Dale a tu pareja una 'mordida de amor' en un lugar inesperado.", "Tápale los ojos a tu pareja y dale besos en diferentes partes del cuerpo para que adivine dónde está.", "Desafíale a tu pareja a un juego de cartas, pero con una apuesta picante.", "Describan qué es lo que les atrajo de su pareja en la primera cita.", "Si tuvieran que elegir a una pareja de cine para representarlos, ¿quiénes serían?", "¿Cuál es el recuerdo más íntimo que guardan de su relación?", "¿Qué los hace sentir más conectados con su pareja en un nivel profundo?", "Dale un masaje en la espalda a tu pareja mientras le susurras algo que te gusta de ella.", "¿Cuál es un logro del que te sientes orgulloso como pareja?", "Dale a tu pareja un masaje erótico con los ojos vendados.", "Susúrrale al oído a tu pareja algo que te gustaría hacer con ella en la cama.", "Describe la parte de tu cuerpo que más te gusta que te besen.", "Dale un beso en el abdomen a tu pareja y sube lentamente hasta sus labios.", "Bésale los dedos de las manos a tu pareja uno por uno, de forma lenta y sensual."
+                    ],
+                    4: [
+                        "Make your partner laugh in 30 seconds, without tickling them!", "Imitate an animal for your partner to guess.", "Make a cocktail using only 2 ingredients and ask your partner to drink it from your mouth."
+                    ]
+                }
+            },
+            en: {
+                title: "Couples Game",
+                developer: "Developer: PandA",
+                description: "A trivia and challenge game to discover and celebrate your connection.",
+                startButton: "Start Playing ✨",
+                levelTitle: "Choose your game mode",
+                level1Title: "Level 1: Connection 🥰",
+                level1Desc: "Soft and fun questions to get to know each other better and strengthen your bond.",
+                level1Button: "Let's play!",
+                level2Title: "Level 2: Passion 🔥",
+                level2Desc: "Turn up the heat with more intimate challenges and questions.",
+                level2Button: "Let's go!",
+                level3Title: "Level 3: Adventure 😈",
+                level3Desc: "Take things to a daring and exciting level. For the brave ones!",
+                level3Button: "Dare to!",
+                level0Title: "Varied Mode 🎲",
+                level0Desc: "A random mix of all levels. You'll never know what's next!",
+                level0Button: "Be surprised!",
+                level4Title: "Questions Only Mode 🗣️",
+                level4Desc: "A communication-focused mode. You'll only get questions from all levels.",
+                level4Button: "Let's Talk!",
+                level5Title: "Challenges Only Mode 🤸",
+                level5Desc: "For when you only want action! Physical and fun challenges from all levels.",
+                level5Button: "Let's Challenge!",
+                level6Title: "Progressive Mode 📈",
+                level6Desc: "The game starts soft and gets more daring over time.",
+                level6Button: "Go!",
+                level7Title: "Custom Mode ✏️",
+                level7Desc: "Create your own bank of questions and challenges for a unique experience.",
+                level7Button: "Create!",
+                roundsTitle: "How many rounds do you want to play?",
+                roundsOption: (r) => `${r} rounds`,
+                startGameButton: "Start Game! 🎉",
+                playerPlaceholder: "Player Name ",
+                prizePlaceholder: "If I win, I want...",
+                winButton: "I did it! 🎉",
+                passButton: "Pass ➡️",
+                restartButton: "Restart",
+                endTitle: "Game Over! 🏁",
+                playAgainButton: "Play Again ✨",
+                playerTurn: (p) => `${p}'s turn`,
+                roundDisplay: (c, t) => `Round ${c} of ${t}`,
+                finalScoreMessage: (p1, s1, p2, s2) => `Final Scores: ${p1}: ${s1}, ${p2}: ${s2}`,
+                winMessage: (w, prize) => `${w} is the winner! Now ${w} can ask for: "${prize}".`,
+                drawMessage: "It's a tie! You both must fulfill each other's wish!",
+                noWinnerMessage: "Nobody won. You both must make a wish for each other!",
+                timeout: "Time's up!",
+                consentTitle: "Level 3 Warning!",
+                consentMessage: "This level contains challenges that explore physical intimacy. Always remember the importance of mutual consent. If something doesn't feel right, say 'no' and pass. Communication is key!",
+                consentButton: "Understood",
+                outOfQuestions: "All questions have been used! Restart the game or choose a different mode.",
+                alertTitle: "Error",
+                alertNames: "Please enter both players' names.",
+                alertQuestions: "Please add at least 5 questions or challenges to start custom mode.",
+                settingsTitle: "Settings",
+                themeLabel: "Choose a theme color:",
+                closeSettingsButton: "Close",
+                questions: {
+                    1: [
+                        "What is the funniest memory you have together?", "What romantic movie do you both like?", "If you could travel anywhere in the world right now, where would you go?", "What is your favorite food to share?", "What do you like most about their smile?", "If you had to describe their laugh in one word, what would it be?", "What is a song that reminds you of each other?", "What was your first impression of each other?", "What superpower would you choose to have together?", "If you could spend one day with no responsibilities, what would you do?", "What is the best gift you have ever given them?", "What is the best advice you've been given about love?", "What made you realize you wanted to be together?", "What's one thing you've learned from your partner?", "What's a goal you'd like to achieve together in the next five years?", "What is your partner's most adorable habit?", "What's one thing your partner does that makes you feel safe?", "What is an accomplishment you are proud of as a couple?", "If you could relive one day of your relationship, which one would you choose?", "What do you miss most about what you did when you first started dating?", "What makes you feel most emotionally connected?", "What is your favorite inside joke?", "What have you learned about love from each other?", "What is something that still surprises you about your partner?", "What is the simplest way to make you happy?", "What is something you deeply admire about your partner?"
+                    ],
+                    2: [
+                        "Describe the most romantic moment you've shared.", "What kind of caresses do you like?", "Name a fantasy you would like to fulfill together.", "What is your favorite place to kiss?", "Give your partner a shoulder massage for one minute.", "What part of your partner's body are you most attracted to?", "Describe your ideal date for a rainy day.", "What makes you feel most loved and desired?", "Kiss them on the part of their body you like the most.", "What makes you feel most sensual and confident?", "Stroke your partner's hair while telling them something you love about their personality.", "What's your most sensual song to slow dance to?", "Describe in three words how you feel when you kiss.", "Name a non-sexual fantasy you'd like to live out together.", "What gets you most excited on a romantic date?", "Give each other a kiss that starts slow and becomes more passionate.", "What's the most romantic gesture you've ever done for your partner?", "If you had to choose a flavor for your passion, what would it be?", "Give your partner a caress on their hand that feels like a kiss.", "Kiss your partner's back while you whisper something you'd like to do to them.", "Massage your partner's feet for two minutes while you tell them what you find attractive about them.", "What is your least sexual but most sensual role-play fantasy?", "Write a sensual message on your partner's back with your finger.", "Give your partner a long, passionate kiss without using your hands.", "What is the way you most like to be touched?", "Describe a fantasy you would like to fulfill if time and place were not an issue."
+                    ],
+                    3: [
+                        "Describe an unexpected place where you would like to have a daring date.", "What has been the craziest fantasy you've had?", "Besa el cuello de tu pareja de forma muy sensual.", "¿Qué juguete sexual te gustaría usar en pareja?", "Describe una posición en la que quieras probar.", "Cuéntale una fantasía erótica que tengas con tu pareja y cómo te gustaría que fuera.", "Besa cada dedo de los pies de tu pareja.", "Besa cada parte del cuerpo de tu pareja que no le hayas besado antes.", "Háblale a tu pareja con la voz más sensual que tengas y descríbele algo que te excita de ella.", "Jueguen a 'verdad o reto' pero solo con preguntas y desafíos picantes.", "Dale un beso a tu pareja en el ombligo, subiendo y bajando.", "Dile a tu pareja qué es lo que más te gusta de sus gemidos.", "Besa a tu pareja desde el cuello hasta el pecho de forma lenta.", "Haz que tu pareja gima de placer sin tocarla.", "Bésense apasionadamente con las manos de ambos atadas.", "Dale a tu pareja una 'mordida de amor' en un lugar inesperado.", "Tápale los ojos a tu pareja y dale besos en diferentes partes del cuerpo para que adivine dónde está.", "Desafíale a tu pareja a un juego de cartas, pero con una apuesta picante.", "Describan qué es lo que les atrajo de su pareja en la primera cita.", "Si tuvieran que elegir a una pareja de cine para representarlos, ¿quiénes serían?", "¿Cuál es el recuerdo más íntimo que guardan de su relación?", "¿Qué los hace sentir más conectados con su pareja en un nivel profundo?", "Dale un masaje en la espalda a tu pareja mientras le susurras algo que te gusta de ella.", "¿Cuál es un logro del que te sientes orgulloso como pareja?", "Dale a tu pareja un masaje erótico con los ojos vendados.", "Susúrrale al oído a tu pareja algo que te gustaría hacer con ella en la cama.", "Describe la parte de tu cuerpo que más te gusta que te besen.", "Dale un beso en el abdomen a tu pareja y sube lentamente hasta sus labios.", "Bésale los dedos de las manos a tu pareja uno por uno, de forma lenta y sensual."
+                    ],
+                    4: [
+                        "Haz que tu pareja se ría en 30 segundos, ¡sin hacerla cosquillas!", "Imita un animal para que tu pareja lo adivine.", "Prepara un cóctel usando solo 2 ingredientes y pídele a tu pareja que te dé de beber en la boca."
+                    ]
+                }
+            },
+            en: {
+                title: "Couples Game",
+                developer: "Developer: PandA",
+                description: "A trivia and challenge game to discover and celebrate your connection.",
+                startButton: "Start Playing ✨",
+                levelTitle: "Choose your game mode",
+                level1Title: "Level 1: Connection 🥰",
+                level1Desc: "Soft and fun questions to get to know each other better and strengthen your bond.",
+                level1Button: "Let's play!",
+                level2Title: "Level 2: Passion 🔥",
+                level2Desc: "Turn up the heat with more intimate challenges and questions.",
+                level2Button: "Let's go!",
+                level3Title: "Level 3: Adventure 😈",
+                level3Desc: "Take things to a daring and exciting level. For the brave ones!",
+                level3Button: "Dare to!",
+                level0Title: "Varied Mode 🎲",
+                level0Desc: "A random mix of all levels. You'll never know what's next!",
+                level0Button: "Be surprised!",
+                level4Title: "Questions Only Mode 🗣️",
+                level4Desc: "A communication-focused mode. You'll only get questions from all levels.",
+                level4Button: "Let's Talk!",
+                level5Title: "Challenges Only Mode 🤸",
+                level5Desc: "For when you only want action! Physical and fun challenges from all levels.",
+                level5Button: "Let's Challenge!",
+                level6Title: "Progressive Mode 📈",
+                level6Desc: "The game starts soft and gets more daring over time.",
+                level6Button: "Go!",
+                level7Title: "Custom Mode ✏️",
+                level7Desc: "Create your own bank of questions and challenges for a unique experience.",
+                level7Button: "Create!",
+                roundsTitle: "How many rounds do you want to play?",
+                roundsOption: (r) => `${r} rounds`,
+                startGameButton: "Start Game! 🎉",
+                playerPlaceholder: "Player Name ",
+                prizePlaceholder: "If I win, I want...",
+                winButton: "I did it! 🎉",
+                passButton: "Pass ➡️",
+                restartButton: "Restart",
+                endTitle: "Game Over! 🏁",
+                playAgainButton: "Play Again ✨",
+                playerTurn: (p) => `${p}'s turn`,
+                roundDisplay: (c, t) => `Round ${c} of ${t}`,
+                finalScoreMessage: (p1, s1, p2, s2) => `Final Scores: ${p1}: ${s1}, ${p2}: ${s2}`,
+                winMessage: (w, prize) => `${w} is the winner! Now ${w} can ask for: "${prize}".`,
+                drawMessage: "It's a tie! You both must fulfill each other's wish!",
+                noWinnerMessage: "Nobody won. You both must make a wish for each other!",
+                timeout: "Time's up!",
+                consentTitle: "Level 3 Warning!",
+                consentMessage: "This level contains challenges that explore physical intimacy. Always remember the importance of mutual consent. If something doesn't feel right, say 'no' and pass. Communication is key!",
+                consentButton: "Understood",
+                outOfQuestions: "All questions have been used! Restart the game or choose a different mode.",
+                alertTitle: "Error",
+                alertNames: "Please enter both players' names.",
+                alertQuestions: "Please add at least 5 questions or challenges to start custom mode.",
+                settingsTitle: "Settings",
+                themeLabel: "Choose a theme color:",
+                closeSettingsButton: "Close",
+                questions: {
+                    1: [
+                        "What is the funniest memory you have together?", "What romantic movie do you both like?", "If you could travel anywhere in the world right now, where would you go?", "What is your favorite food to share?", "What do you like most about their smile?", "If you had to describe their laugh in one word, what would it be?", "What is a song that reminds you of each other?", "What was your first impression of each other?", "What superpower would you choose to have together?", "If you could spend one day with no responsibilities, what would you do?", "What is the best gift you have ever given them?", "What is the best advice you've been given about love?", "What made you realize you wanted to be together?", "What's one thing you've learned from your partner?", "What's a goal you'd like to achieve together in the next five years?", "What is your partner's most adorable habit?", "What's one thing your partner does that makes you feel safe?", "What is an accomplishment you are proud of as a couple?", "If you could relive one day of your relationship, which one would you choose?", "What do you miss most about what you did when you first started dating?", "What makes you feel most emotionally connected?", "What is your favorite inside joke?", "What have you learned about love from each other?", "What is something that still surprises you about your partner?", "What is the simplest way to make you happy?", "What is something you deeply admire about your partner?"
+                    ],
+                    2: [
+                        "Describe the most romantic moment you've shared.", "What kind of caresses do you like?", "Name a fantasy you would like to fulfill together.", "What is your favorite place to kiss?", "Give your partner a shoulder massage for one minute.", "What part of your partner's body are you most attracted to?", "Describe your ideal date for a rainy day.", "What makes you feel most loved and desired?", "Kiss them on the part of their body you like the most.", "What makes you feel most sensual and confident?", "Stroke your partner's hair while telling them something you love about their personality.", "What's your most sensual song to slow dance to?", "Describe in three words how you feel when you kiss.", "Name a non-sexual fantasy you'd like to live out together.", "What gets you most excited on a romantic date?", "Give each other a kiss that starts slow and becomes more passionate.", "What's the most romantic gesture you've ever done for your partner?", "If you had to choose a flavor for your passion, what would it be?", "Give your partner a caress on their hand that feels like a kiss.", "Kiss your partner's back while you whisper something you'd like to do to them.", "Massage your partner's feet for two minutes while you tell them what you find attractive about them.", "What is your least sexual but most sensual role-play fantasy?", "Write a sensual message on your partner's back with your finger.", "Give your partner a long, passionate kiss without using your hands.", "What is the way you most like to be touched?", "Describe a fantasy you would like to fulfill if time and place were not an issue."
+                    ],
+                    3: [
+                        "Describe an unexpected place where you would like to have a daring date.", "What has been the craziest fantasy you've had?", "Besa el cuello de tu pareja de forma muy sensual.", "¿Qué juguete sexual te gustaría usar en pareja?", "Describe una posición en la que quieras probar.", "Cuéntale una fantasía erótica que tengas con tu pareja y cómo te gustaría que fuera.", "Besa cada dedo de los pies de tu pareja.", "Besa cada parte del cuerpo de tu pareja que no le hayas besado antes.", "Háblale a tu pareja con la voz más sensual que tengas y descríbele algo que te excita de ella.", "Jueguen a 'verdad o reto' pero solo con preguntas y desafíos picantes.", "Dale un beso a tu pareja en el ombligo, subiendo y bajando.", "Dile a tu pareja qué es lo que más te gusta de sus gemidos.", "Besa a tu pareja desde el cuello hasta el pecho de forma lenta.", "Haz que tu pareja gima de placer sin tocarla.", "Bésense apasionadamente con las manos de ambos atadas.", "Dale a tu pareja una 'mordida de amor' en un lugar inesperado.", "Tápale los ojos a tu pareja y dale besos en diferentes partes del cuerpo para que adivine dónde está.", "Desafíale a tu pareja a un juego de cartas, pero con una apuesta picante.", "Describan qué es lo que les atrajo de su pareja en la primera cita.", "Si tuvieran que elegir a una pareja de cine para representarlos, ¿quiénes serían?", "¿Cuál es el recuerdo más íntimo que guardan de su relación?", "¿Qué los hace sentir más conectados con su pareja en un nivel profundo?", "Dale un masaje en la espalda a tu pareja mientras le susurras algo que te gusta de ella.", "¿Cuál es un logro del que te sientes orgulloso como pareja?", "Dale a tu pareja un masaje erótico con los ojos vendados.", "Susúrrale al oído a tu pareja algo que te gustaría hacer con ella en la cama.", "Describe la parte de tu cuerpo que más te gusta que te besen.", "Dale un beso en el abdomen a tu pareja y sube lentamente hasta sus labios.", "Bésale los dedos de las manos a tu pareja uno por uno, de forma lenta y sensual."
+                    ],
+                    4: [
+                        "Make your partner laugh in 30 seconds, without tickling them!", "Imitate an animal for your partner to guess.", "Make a cocktail using only 2 ingredients and ask your partner to drink it from your mouth."
+                    ]
+                }
             }
+        };
+
+        let translations = {};
+        const loadingPrize1 = document.createElement('div');
+        loadingPrize1.className = 'loading-spinner';
+        const loadingPrize2 = document.createElement('div');
+        loadingPrize2.className = 'loading-spinner';
+        const loadingQuestion = document.createElement('div');
+        loadingQuestion.className = 'loading-spinner';
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let audioSource = null;
+
+        function loadTranslations() {
+            const lang = languageSelect.value;
+            translations = gameData[lang];
+            updateText();
         }
 
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            html.classList.toggle('dark');
-            sunIcon.classList.toggle('hidden');
-            moonIcon.classList.toggle('hidden');
-        }
+        function updateText() {
+            document.getElementById('main-title').textContent = translations.title;
+            const heartSpan = document.createElement('span');
+            heartSpan.id = 'heart-icon';
+            heartSpan.classList.add('transition-colors', 'duration-1000');
+            heartSpan.textContent = '❤️';
+            document.getElementById('main-title').appendChild(heartSpan);
 
-        function startGame() {
-            const player1Name = player1Input.value.trim() || 'Jugador 1';
-            const player2Name = player2Input.value.trim() || 'Jugador 2';
-            players = [
-                { name: player1Name, score: 0 },
-                { name: player2Name, score: 0 }
-            ];
+            document.getElementById('developer-note').textContent = translations.developer;
+            document.getElementById('game-description').textContent = translations.description;
+            document.getElementById('player1-name').placeholder = translations.playerPlaceholder + "1";
+            document.getElementById('player2-name').placeholder = translations.playerPlaceholder + "2";
+            document.getElementById('player1-prize').placeholder = translations.prizePlaceholder;
+            document.getElementById('player2-prize').placeholder = translations.prizePlaceholder;
+            document.getElementById('start-button').textContent = translations.startButton;
+            document.getElementById('level-title').textContent = translations.levelTitle;
+            document.getElementById('level1-title').textContent = translations.level1Title;
+            document.getElementById('level1-desc').textContent = translations.level1Desc;
+            document.getElementById('level1-button').textContent = translations.level1Button;
+            document.getElementById('level2-title').textContent = translations.level2Title;
+            document.getElementById('level2-desc').textContent = translations.level2Desc;
+            document.getElementById('level2-button').textContent = translations.level2Button;
+            document.getElementById('level3-title').textContent = translations.level3Title;
+            document.getElementById('level3-desc').textContent = translations.level3Desc;
+            document.getElementById('level3-button').textContent = translations.level3Button;
+            document.getElementById('level0-title').textContent = translations.level0Title;
+            document.getElementById('level0-desc').textContent = translations.level0Desc;
+            document.getElementById('level0-button').textContent = translations.level0Button;
+            document.getElementById('level4-title').textContent = translations.level4Title;
+            document.getElementById('level4-desc').textContent = translations.level4Desc;
+            document.getElementById('level4-button').textContent = translations.level4Button;
+            document.getElementById('level5-title').textContent = translations.level5Title;
+            document.getElementById('level5-desc').textContent = translations.level5Desc;
+            document.getElementById('level5-button').textContent = translations.level5Button;
+            document.getElementById('level6-title').textContent = translations.level6Title;
+            document.getElementById('level6-desc').textContent = translations.level6Desc;
+            document.getElementById('level6-button').textContent = translations.level6Button;
+            document.getElementById('level7-title').textContent = translations.level7Title;
+            document.getElementById('level7-desc').textContent = translations.level7Desc;
+            document.getElementById('level7-button').textContent = translations.level7Button;
+            document.getElementById('rounds-title').textContent = translations.roundsTitle;
+            document.getElementById('option-5-rounds').textContent = translations.roundsOption(5);
+            document.getElementById('option-10-rounds').textContent = translations.roundsOption(10);
+            document.getElementById('option-15-rounds').textContent = translations.roundsOption(15);
+            document.getElementById('option-20-rounds').textContent = translations.roundsOption(20);
+            document.getElementById('option-30-rounds').textContent = translations.roundsOption(30);
+            document.getElementById('start-game-button').textContent = translations.startGameButton;
+            document.getElementById('win-button').textContent = translations.winButton;
+            document.getElementById('pass-button').textContent = translations.passButton;
+            document.getElementById('restart-button').textContent = translations.restartButton;
+            document.getElementById('end-title').textContent = translations.endTitle;
+            document.getElementById('play-again-button').textContent = translations.playAgainButton;
+            document.getElementById('consent-title').textContent = translations.consentTitle;
+            document.getElementById('consent-message').textContent = translations.consentMessage;
+            document.getElementById('consent-button').textContent = translations.consentButton;
+            document.getElementById('create-title').textContent = translations.level7Title;
+            document.getElementById('add-question-button').textContent = translations.addQuestionButton;
+            document.getElementById('play-custom-button').textContent = translations.playCustomButton;
+            document.getElementById('settings-title').textContent = translations.settingsTitle;
+            document.getElementById('theme-label').textContent = translations.themeLabel;
+            document.getElementById('close-settings-button').textContent = translations.closeSettingsButton;
+            updateScoresDisplay();
+            updateTurnDisplay();
+            updateRoundDisplay();
+        }
+        
+        languageSelect.addEventListener('change', loadTranslations);
+        
+        const vibrate = (pattern) => {
+            if (navigator.vibrate) {
+                navigator.vibrate(pattern);
+            }
+        };
+
+        // Función para cambiar de pantalla
+        function showScreen(screenId) {
             startScreen.classList.add('hidden');
-            levelScreen.classList.remove('hidden');
-        }
-
-        function selectLevel(level) {
-            currentLevel = level;
-            
-            // Selecciona las preguntas según el modo
-            if (level === 0) { // Modo Variado
-                questions = allQuestions.slice();
-            } else if (level === 4) { // Solo Preguntas
-                questions = allQuestions.filter(q => q.type === 'trivia');
-            } else if (level === 5) { // Solo Retos
-                questions = allQuestions.filter(q => q.type === 'dare');
-            } else { // Niveles 1, 2, 3
-                questions = allQuestions.filter(q => q.level === level);
-            }
-
-            shuffle(questions);
-            
-            // Mostrar modal de consentimiento si el modo lo requiere
-            if (currentLevel === 3 || currentLevel === 0 || currentLevel === 5) {
-                consentModal.classList.remove('hidden');
-            } else {
-                showRoundsScreen();
-            }
-        }
-
-        function showRoundsScreen() {
             levelScreen.classList.add('hidden');
-            roundsScreen.classList.remove('hidden');
+            roundsScreen.classList.add('hidden');
+            gameScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            createGameScreen.classList.add('hidden');
+            consentModal.classList.add('hidden');
+            alertModal.classList.add('hidden');
+            settingsModal.classList.add('hidden');
+            
+            document.getElementById(screenId).classList.remove('hidden');
+            
+            if (screenId !== 'start-screen' && screenId !== 'end-screen') {
+                backButtonContainer.classList.remove('hidden');
+            } else {
+                backButtonContainer.classList.add('hidden');
+            }
         }
         
-        function selectRounds() {
+        window.loadGame = async () => {
+            const savedGame = await window.loadGameState();
+            if (savedGame) {
+                player1Name = savedGame.player1Name;
+                player2Name = savedGame.player2Name;
+                player1Prize = savedGame.player1Prize;
+                player2Prize = savedGame.player2Prize;
+                player1Score = savedGame.player1Score;
+                player2Score = savedGame.player2Score;
+                currentPlayer = savedGame.currentPlayer;
+                currentRound = savedGame.currentRound;
+                totalRounds = savedGame.totalRounds;
+                currentLevel = savedGame.currentLevel;
+                usedQuestions = savedGame.usedQuestions;
+
+                player1NameInput.value = player1Name;
+                player2NameInput.value = player2Name;
+                if (player1PrizeInput) player1PrizeInput.value = player1Prize;
+                if (player2PrizeInput) player2PrizeInput.value = player2Prize;
+                
+                if (player1Name) player1PrizeContainer.classList.add('active');
+                if (player2Name) player2PrizeContainer.classList.add('active');
+
+                if (currentRound <= totalRounds) {
+                    showScreen('game-screen');
+                    displayQuestion();
+                } else {
+                    showScreen('end-screen');
+                    displayEndScreen();
+                }
+            } else {
+                showScreen('start-screen');
+            }
+        };
+
+        window.togglePrizeInput = (playerNum) => {
+            const nameInput = document.getElementById(`player${playerNum}-name`);
+            const prizeContainer = document.getElementById(`player${playerNum}-prize-container`);
+            if (nameInput.value.trim() !== '') {
+                prizeContainer.classList.add('active');
+            } else {
+                prizeContainer.classList.remove('active');
+                if (document.getElementById(`player${playerNum}-prize`)) {
+                    document.getElementById(`player${playerNum}-prize`).value = '';
+                }
+            }
+        };
+
+        function saveGame() {
+            const gameState = {
+                player1Name,
+                player2Name,
+                player1Prize,
+                player2Prize,
+                player1Score,
+                player2Score,
+                currentPlayer,
+                currentRound,
+                totalRounds,
+                currentLevel,
+                usedQuestions
+            };
+            window.saveGameState(gameState);
+        }
+
+        function showAlertModal(title, message) {
+            document.getElementById('alert-title').textContent = title;
+            document.getElementById('alert-message').textContent = message;
+            alertModal.classList.remove('hidden');
+        }
+
+        window.closeAlertModal = function() {
+            alertModal.classList.add('hidden');
+        };
+
+        window.toggleSettingsModal = function() {
+            settingsModal.classList.toggle('hidden');
+        };
+
+        window.closeSettingsModal = function() {
+            settingsModal.classList.add('hidden');
+        };
+
+        window.setAccentColor = function(color, rgb, button) {
+            document.body.style.setProperty('--accent-color', color);
+            document.body.style.setProperty('--accent-color-rgb', rgb);
+            const buttons = document.querySelectorAll('.color-picker-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            if (button) button.classList.add('active');
+        };
+
+        window.startGame = function() {
+            player1Name = player1NameInput.value.trim();
+            player2Name = player2NameInput.value.trim();
+            player1Prize = player1PrizeInput.value.trim() || translations.prizePlaceholder;
+            player2Prize = player2PrizeInput.value.trim() || translations.prizePlaceholder;
+            
+            if (player1Name && player2Name) {
+                clickSound.play();
+                showScreen('level-screen');
+                saveGame();
+            } else {
+                showAlertModal(translations.alertTitle, translations.alertNames);
+            }
+        };
+        
+        window.selectLevel = async function(level) {
+            currentLevel = level;
+            clickSound.play();
+
+            if (currentLevel === 7) {
+                customQuestions = await window.getCustomQuestions();
+                showScreen('create-game-screen');
+            } else if (currentLevel === 3 || currentLevel === 0 || currentLevel === 6) {
+                showConsentModal();
+            } else {
+                showScreen('rounds-screen');
+            }
+            saveGame();
+        };
+
+        function showConsentModal() {
+            consentModal.classList.remove('hidden');
+        }
+
+        window.closeConsentModal = function() {
+            clickSound.play();
+            consentModal.classList.add('hidden');
+            showScreen('rounds-screen');
+        };
+
+        window.addCustomQuestion = async function() {
+            const question = document.getElementById('custom-question-input').value.trim();
+            if (question) {
+                await window.saveCustomQuestion(question);
+                customQuestions.push(question);
+                document.getElementById('custom-question-input').value = '';
+                showAlertModal('Éxito', '¡Pregunta o reto agregado!');
+            }
+        };
+        
+        window.startCustomGame = function() {
+            if (customQuestions.length < 5) {
+                showAlertModal(translations.alertTitle, translations.alertQuestions);
+            } else {
+                showScreen('rounds-screen');
+            }
+        };
+
+        window.selectRounds = function() {
+            clickSound.play();
             totalRounds = parseInt(totalRoundsSelect.value);
             currentRound = 1;
-            showGameScreen();
+            player1Score = 0;
+            player2Score = 0;
+            currentPlayer = 1;
+            usedQuestions = {};
+            showScreen('game-screen');
+            displayQuestion();
+            saveGame();
+        };
+
+        window.goBack = function() {
+            clickSound.play();
+            clearInterval(timerInterval);
+            if (!levelScreen.classList.contains('hidden')) {
+                showScreen('start-screen');
+            } else if (!roundsScreen.classList.contains('hidden')) {
+                if (currentLevel === 7) {
+                    showScreen('create-game-screen');
+                } else {
+                    showScreen('level-screen');
+                }
+            } else if (!gameScreen.classList.contains('hidden')) {
+                showScreen('rounds-screen');
+            } else if (!createGameScreen.classList.contains('hidden')) {
+                showScreen('level-screen');
+            }
+        };
+
+        function displayQuestion() {
+            if (currentRound > totalRounds) {
+                showScreen('end-screen');
+                displayEndScreen();
+                return;
+            }
+
+            let questionList;
+            let currentLang = languageSelect.value;
+
+            if (currentLevel === 0) { // Modo Variado
+                allQuestions = [...gameData[currentLang].questions[1], ...gameData[currentLang].questions[2], ...gameData[currentLang].questions[3]];
+                const availableQuestions = allQuestions.filter((q) => !usedQuestions[q]);
+                questionList = availableQuestions.length === 0 ? allQuestions : availableQuestions;
+            } else if (currentLevel === 4) { // Solo Preguntas
+                allQuestions = [...gameData[currentLang].questions[1], ...gameData[currentLang].questions[2], ...gameData[currentLang].questions[3]].filter(q => q.includes('?'));
+                const availableQuestions = allQuestions.filter((q) => !usedQuestions[q]);
+                questionList = availableQuestions.length === 0 ? allQuestions : availableQuestions;
+            } else if (currentLevel === 5) { // Solo Retos
+                allQuestions = [...gameData[currentLang].questions[1], ...gameData[currentLang].questions[2], ...gameData[currentLang].questions[3]].filter(q => !q.includes('?'));
+                const availableQuestions = allQuestions.filter((q) => !usedQuestions[q]);
+                questionList = availableQuestions.length === 0 ? allQuestions : availableQuestions;
+            } else if (currentLevel === 6) { // Modo Progresivo
+                let currentProgressionLevel = 1;
+                if (currentRound > totalRounds / 3 * 2) {
+                    currentProgressionLevel = 3;
+                } else if (currentRound > totalRounds / 3) {
+                    currentProgressionLevel = 2;
+                }
+                allQuestions = gameData[currentLang].questions[currentProgressionLevel];
+                const availableQuestions = allQuestions.filter((q) => !usedQuestions[q]);
+                questionList = availableQuestions.length === 0 ? allQuestions : availableQuestions;
+            } else if (currentLevel === 7) { // Modo Personalizado
+                questionList = customQuestions;
+            } else {
+                allQuestions = gameData[currentLang].questions[currentLevel];
+                const availableQuestions = allQuestions.filter((q) => !usedQuestions[q]);
+                questionList = availableQuestions.length === 0 ? allQuestions : availableQuestions;
+            }
+
+            if (questionList.length === 0) {
+                questionText.textContent = translations.outOfQuestions;
+                document.getElementById('action-buttons').classList.add('hidden');
+                return;
+            }
+            document.getElementById('action-buttons').classList.remove('hidden');
+            
+            const randomIndex = Math.floor(Math.random() * questionList.length);
+            const question = questionList[randomIndex];
+            questionText.textContent = question;
+            
+            usedQuestions[question] = true;
+            
+            updateScoresDisplay();
+            updateTurnDisplay();
+            updateRoundDisplay();
+            startTimer();
+            saveGame();
         }
 
-        function closeConsentModal() {
-            consentModal.classList.add('hidden');
-            showRoundsScreen();
+        async function generatePrizeIdea(playerNum) {
+            const player1Name = document.getElementById('player1-name').value;
+            const player2Name = document.getElementById('player2-name').value;
+            const prizeInput = document.getElementById(`player${playerNum}-prize`);
+            
+            prizeInput.value = 'Generando idea...';
+            const button = prizeInput.parentNode.querySelector('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<div class="loading-spinner"></div>';
+            button.disabled = true;
+
+            const prompt = `Actúa como un planificador de citas románticas. Genera una idea de premio muy creativa y romántica para una pareja que acaba de jugar un juego de retos. Los nombres son ${player1Name} y ${player2Name}. La idea debe ser concisa y en una sola frase.`;
+            
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: "Debes generar una idea de premio única y personalizada para una pareja. El premio debe ser algo que puedan hacer juntos, como una experiencia o una actividad. No seas genérico. La respuesta debe ser una sola frase." }]
+                },
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                    prizeInput.value = text.trim().replace(/^"|"$/g, '');
+                } else {
+                    prizeInput.value = 'No se pudo generar una idea, ¡intenta de nuevo!';
+                }
+            } catch (error) {
+                console.error("Error al llamar a la API de Gemini:", error);
+                prizeInput.value = 'Error al generar la idea.';
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
         }
 
-        function showGameScreen() {
-            roundsScreen.classList.add('hidden');
-            gameScreen.classList.remove('hidden');
-            updateScores();
+        async function generateQuestionWithGemini() {
+            const button = document.getElementById('gemini-question-button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<div class="loading-spinner"></div>';
+            button.disabled = true;
+
+            const currentLang = languageSelect.value;
+            const player1Name = document.getElementById('player1-name').value;
+            const player2Name = document.getElementById('player2-name').value;
+            
+            let levelDescription = '';
+            if (currentLevel === 1) levelDescription = gameData[currentLang].level1Desc;
+            if (currentLevel === 2) levelDescription = gameData[currentLang].level2Desc;
+            if (currentLevel === 3) levelDescription = gameData[currentLang].level3Desc;
+
+            const prompt = `Genera una pregunta o reto único e interesante para una pareja llamada ${player1Name} y ${player2Name}. El tono debe ser: ${levelDescription}. La respuesta debe ser en ${currentLang}. No seas explícito.`;
+            
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: "Genera una pregunta o reto que se ajuste al tono y nivel de intimidad de un juego para parejas. La respuesta debe ser una sola frase." }]
+                },
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                    questionText.textContent = text.trim().replace(/^"|"$/g, '');
+                    usedQuestions[text] = true;
+                } else {
+                    questionText.textContent = 'No se pudo generar una pregunta. ¡Intenta de nuevo!';
+                }
+            } catch (error) {
+                console.error("Error al llamar a la API de Gemini:", error);
+                questionText.textContent = 'Error al generar la pregunta.';
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        window.readQuestion = async function() {
+            const textToRead = questionText.textContent;
+            if (!textToRead || textToRead.startsWith('¡') || textToRead.startsWith('No se pudo')) {
+                return;
+            }
+
+            const button = document.getElementById('read-button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<div class="loading-spinner"></div>';
+            button.disabled = true;
+
+            const lang = languageSelect.value;
+            const voiceMap = {
+                es: "Kore",
+                en: "Puck"
+            };
+            const selectedVoice = voiceMap[lang] || "Kore";
+
+            const payload = {
+                contents: [{ parts: [{ text: textToRead }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: selectedVoice }
+                        }
+                    }
+                }
+            };
+            
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+
+                if (audioData) {
+                    const audioBuffer = base64ToArrayBuffer(audioData);
+                    playPCM(audioBuffer, 24000); // 24000 es la tasa de muestreo para esta API
+                } else {
+                    console.error('No se pudo obtener datos de audio.');
+                }
+
+            } catch (error) {
+                console.error('Error al generar o reproducir el audio:', error);
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        };
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function playPCM(pcmData, sampleRate) {
+            if (audioSource) {
+                audioSource.stop();
+                audioSource = null;
+            }
+
+            const buffer = audioContext.createBuffer(1, pcmData.byteLength / 2, sampleRate);
+            const channelData = buffer.getChannelData(0);
+            const pcm16 = new Int16Array(pcmData);
+            for (let i = 0; i < pcm16.length; i++) {
+                channelData[i] = pcm16[i] / 32768;
+            }
+
+            audioSource = audioContext.createBufferSource();
+            audioSource.buffer = buffer;
+            audioSource.connect(audioContext.destination);
+            audioSource.start();
+        }
+
+        function nextQuestion() {
+            clickSound.play();
+            clearInterval(timerInterval);
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            if (currentPlayer === 1) {
+                currentRound++;
+            }
+            displayQuestion();
+        }
+
+        window.passWithConsequence = function() {
+            clickSound.play();
+            if (currentPlayer === 1) {
+                player1Score = Math.max(0, player1Score - 1);
+            } else {
+                player2Score = Math.max(0, player2Score - 1);
+            }
             nextQuestion();
+        };
+
+        window.addPointAndNext = function() {
+            clickSound.play();
+            let points = 1;
+            if (currentLevel === 2) points = 2;
+            if (currentLevel === 3) points = 3;
+            if (currentLevel === 6) {
+                if (currentRound > totalRounds / 3 * 2) points = 3;
+                else if (currentRound > totalRounds / 3) points = 2;
+                else points = 1;
+            }
+
+            if (currentPlayer === 1) {
+                player1Score += points;
+            } else {
+                player2Score += points;
+            }
+            nextQuestion();
+        };
+
+        function updateScoresDisplay() {
+            player1ScoreDisplay.textContent = `${player1Name}: ${player1Score}`;
+            player2ScoreDisplay.textContent = `${player2Name}: ${player2Score}`;
+            
+            const progress = (currentRound - 1) / totalRounds * 100;
+            progressBar.style.width = `${progress}%`;
         }
 
-        function updateScores() {
-            player1ScoreDisplay.textContent = `${players[0].name}: ${players[0].score} puntos`;
-            player2ScoreDisplay.textContent = `${players[1].name}: ${players[1].score} puntos`;
-            roundDisplay.textContent = `Ronda ${currentRound} de ${totalRounds}`;
+        function updateTurnDisplay() {
+            const player = currentPlayer === 1 ? player1Name : player2Name;
+            playerTurnDisplay.textContent = translations.playerTurn(player);
         }
 
+        function updateRoundDisplay() {
+            roundDisplay.textContent = translations.roundDisplay(currentRound, totalRounds);
+        }
+
+        function displayEndScreen() {
+            let message;
+            let winnerPrize = '';
+            let loserPrize = '';
+
+            if (player1Score > player2Score) {
+                winnerPrize = player1Prize;
+                message = translations.winMessage(player1Name, winnerPrize);
+            } else if (player2Score > player1Score) {
+                winnerPrize = player2Prize;
+                message = translations.winMessage(player2Name, winnerPrize);
+            } else if (player1Score === 0 && player2Score === 0) {
+                 message = translations.noWinnerMessage;
+            } else {
+                message = translations.drawMessage;
+            }
+
+            winnerMessage.textContent = message;
+            finalScores.textContent = translations.finalScoreMessage(player1Name, player1Score, player2Name, player2Score);
+            endMessage.textContent = "El perdedor debe cumplir un deseo del ganador. ¡Elijan con cuidado!";
+            saveGame();
+        }
+        
         function startTimer() {
-            let timeLeft = TIME_LIMIT;
+            clearInterval(timerInterval);
+            timeLeft = 30;
             timerDisplay.textContent = timeLeft;
             timerInterval = setInterval(() => {
                 timeLeft--;
                 timerDisplay.textContent = timeLeft;
+                if (timeLeft <= 5) {
+                    vibrate([200, 100, 200]);
+                    timerDisplay.classList.add('text-red-500', 'dark:text-red-400');
+                } else {
+                    timerDisplay.classList.remove('text-red-500', 'dark:text-red-400');
+                }
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    nextQuestion();
+                    questionText.textContent = translations.timeout;
+                    vibrate([500, 50, 500]);
+                    setTimeout(() => {
+                        nextQuestion();
+                    }, 2000);
                 }
             }, 1000);
         }
+        
+        window.restartGame = function() {
+            clickSound.play();
+            clearInterval(timerInterval);
+            showScreen('start-screen');
+            loadTranslations();
+        };
 
-        function addPointAndNext() {
-            clearInterval(timerInterval); // Detiene el temporizador
-            players[currentPlayerIndex].score++;
-            updateScores();
-            nextQuestion();
-        }
+        window.toggleDarkMode = function() {
+            const html = document.documentElement;
+            const isDarkMode = html.classList.toggle('dark');
+            const sunIcon = document.getElementById('sun-icon');
+            const moonIcon = document.getElementById('moon-icon');
+            const sunIconSettings = document.getElementById('sun-icon-settings');
+            const moonIconSettings = document.getElementById('moon-icon-settings');
 
-        function nextQuestion() {
-            clearInterval(timerInterval); // Detiene el temporizador
-            
-            // Comprobar si se ha llegado al final de las rondas
-            if (currentRound > totalRounds) {
-                endGame();
-                return;
-            }
-
-            // Si se acaban las preguntas, barajar y continuar
-            if (questions.length === 0) {
-                questions = allQuestions.slice();
-                shuffle(questions);
-            }
-
-            const currentQuestion = questions.pop();
-            questionText.textContent = currentQuestion.question;
-            playerTurnSpan.textContent = `Turno de ${players[currentPlayerIndex].name}`;
-            
-            // Inicia el temporizador para la nueva pregunta
-            startTimer();
-
-            // Cambiar de jugador para la siguiente ronda
-            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-
-            // Avanzar a la siguiente ronda si el turno vuelve al Jugador 1
-            if (currentPlayerIndex === 0) {
-                currentRound++;
-                updateScores();
-            }
-        }
-
-        function endGame() {
-            clearInterval(timerInterval); // Detiene el temporizador final
-            gameScreen.classList.add('hidden');
-            endScreen.classList.remove('hidden');
-
-            const player1 = players[0];
-            const player2 = players[1];
-
-            let winner, loser;
-
-            if (player1.score > player2.score) {
-                winner = player1;
-                loser = player2;
-                winnerMessage.textContent = `¡${winner.name} ha ganado! 🎉`;
-            } else if (player2.score > player1.score) {
-                winner = player2;
-                loser = player1;
-                winnerMessage.textContent = `¡${winner.name} ha ganado! 🎉`;
+            if (isDarkMode) {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+                if (sunIconSettings) sunIconSettings.classList.add('hidden');
+                if (moonIconSettings) moonIconSettings.classList.remove('hidden');
             } else {
-                // Empate
-                winnerMessage.textContent = "¡Es un empate! Nadie gana ni pierde. 🤝";
-                finalScores.textContent = `Ambos tienen ${player1.score} puntos.`;
-                return;
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+                if (sunIconSettings) sunIconSettings.classList.remove('hidden');
+                if (moonIconSettings) moonIconSettings.classList.add('hidden');
             }
-
-            finalScores.textContent = `${winner.name}: ${winner.score} puntos | ${loser.name}: ${loser.score} puntos.`;
-        }
-
-        function restartGame() {
-            clearInterval(timerInterval); // Asegura que el temporizador se detenga al reiniciar
-            endScreen.classList.add('hidden');
-            gameScreen.classList.add('hidden');
-            roundsScreen.classList.add('hidden');
-            startScreen.classList.remove('hidden');
-            currentPlayerIndex = 0;
-            currentLevel = 0;
-            questions = [];
-            player1Input.value = '';
-            player2Input.value = '';
-            totalRoundsSelect.value = '10';
-        }
+        };
+        
+        loadTranslations();
     </script>
 </body>
 </html>
