@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego para Parejas - Estilos</title>
+    <!-- Configuración de Tailwind para el modo oscuro -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle, #fce7f3 0%, #d8b4fe 100%);
+        }
+        .dark body {
+            background: #111827;
+        }
+        .text-shadow-lg {
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.2);
+        }
+        .dark .text-shadow-lg {
+            text-shadow: 0 0 10px rgba(255, 0, 150, 0.7), 0 0 20px rgba(255, 0, 150, 0.5);
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s infinite;
+        }
+        @keyframes pulse-slow {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+            }
+        }
+        .dark-mode-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center p-4 transition-colors duration-500">
+    <div onclick="toggleDarkMode()" class="dark-mode-toggle bg-white dark:bg-gray-800 text-gray-800 dark:text-yellow-400 shadow-lg">
+        <!-- Icono de Sol / Luna -->
+        <svg id="moon-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"></path>
+        </svg>
+        <svg id="sun-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2.25a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.52 7.52a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06L7.52 7.52zM3 12a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5H3.75A.75.75 0 013 12zM7.52 16.48a.75.75 0 01-1.06 1.06l-1.77-1.77a.75.75 0 011.06-1.06l1.77 1.77zM12 18.25a.75.75 0 01-.75.75v2.5a.75.75 0 011.5 0v-2.5a.75.75 0 01-.75-.75zM16.48 16.48a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06l-1.77-1.77zM18.25 12a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5h-2.5a.75.75 0 01-.75-.75zM16.48 7.52a.75.75 0 011.06-1.06l1.77 1.77a.75.75 0 01-1.06 1.06l-1.77-1.77z"></path>
+        </svg>
+    </div>
+    <div id="game-container" class="w-full max-w-4xl bg-white dark:bg-gray-800 p-6 md:p-10 rounded-3xl shadow-2xl flex flex-col items-center text-center transition-all duration-500 transform scale-100 animate-pulse-slow">
+        <!-- Pantalla de inicio -->
+        <div id="start-screen" class="space-y-6 w-full">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-red-500 dark:from-fuchsia-400 dark:to-cyan-400 mb-2 text-shadow-lg">Juego para Parejas ❤️</h1>
+            <p class="text-gray-600 dark:text-gray-400 text-sm">Desarrollador: PandA</p>
+            <p class="text-gray-600 dark:text-gray-400 text-lg">Un juego de trivia y desafíos para descubrir y celebrar su conexión.</p>
+            <div class="space-y-4">
+                <input type="text" id="player1-name" placeholder="Nombre del Jugador 1" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md">
+                <input type="text" id="player2-name" placeholder="Nombre del Jugador 2" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md">
+            </div>
+            <button onclick="startGame()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105">Empezar a Jugar ✨</button>
+        </div>
+
+        <!-- Pantalla de selección de nivel -->
+        <div id="level-screen" class="hidden space-y-6 w-full">
+            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Elige tu modo de juego</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Modo Conexión -->
+                <div class="level-card bg-pink-400 dark:bg-fuchsia-600 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105">
+                    <div>
+                        <h3 class="text-2xl font-bold">Nivel 1: Conexión 🥰</h3>
+                        <p class="text-sm mt-2 font-normal">Preguntas suaves y divertidas para conocerse mejor y fortalecer su vínculo.</p>
+                    </div>
+                    <button onclick="selectLevel(1)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-700 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-800 transition-all">
+                        ¡A jugar!
+                    </button>
+                </div>
+
+                <!-- Modo Pasión -->
+                <div class="level-card bg-rose-500 dark:bg-violet-600 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105">
+                    <div>
+                        <h3 class="text-2xl font-bold">Nivel 2: Pasión 🔥</h3>
+                        <p class="text-sm mt-2 font-normal">Suban un poco la temperatura con desafíos y preguntas más íntimas.</p>
+                    </div>
+                    <button onclick="selectLevel(2)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-rose-600 dark:bg-violet-700 rounded-full shadow-lg hover:bg-rose-700 dark:hover:bg-violet-800 transition-all">
+                        ¡Vamos!
+                    </button>
+                </div>
+                
+                <!-- Modo Aventura -->
+                <div class="level-card bg-red-600 dark:bg-cyan-600 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105">
+                    <div>
+                        <h3 class="text-2xl font-bold">Nivel 3: Aventura 😈</h3>
+                        <p class="text-sm mt-2 font-normal">Lleven las cosas a un nivel atrevido y excitante. ¡Solo para los valientes!</p>
+                    </div>
+                    <button onclick="selectLevel(3)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-red-700 dark:bg-cyan-700 rounded-full shadow-lg hover:bg-red-800 dark:hover:bg-cyan-800 transition-all">
+                        ¡Atrévete!
+                    </button>
+                </div>
+                
+                <!-- Modo Variado -->
+                <div class="level-card bg-purple-500 dark:bg-indigo-600 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105 md:col-span-2 lg:col-span-1">
+                    <div>
+                        <h3 class="text-2xl font-bold">Modo Variado 🎲</h3>
+                        <p class="text-sm mt-2 font-normal">Un mix al azar de todos los niveles. ¡Nunca sabrán qué sigue!</p>
+                    </div>
+                    <button onclick="selectLevel(0)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-purple-600 dark:bg-indigo-700 rounded-full shadow-lg hover:bg-purple-700 dark:hover:bg-indigo-800 transition-all">
+                        ¡Sorpréndete!
+                    </button>
+                </div>
+
+                <!-- Modo Solo Preguntas -->
+                <div class="level-card bg-blue-500 dark:bg-blue-700 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105 md:col-span-2 lg:col-span-1">
+                    <div>
+                        <h3 class="text-2xl font-bold">Modo Solo Preguntas 🗣️</h3>
+                        <p class="text-sm mt-2 font-normal">Un modo centrado en la comunicación. Solo recibirán preguntas de todos los niveles.</p>
+                    </div>
+                    <button onclick="selectLevel(4)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-blue-600 dark:bg-blue-800 rounded-full shadow-lg hover:bg-blue-700 dark:hover:bg-blue-900 transition-all">
+                        ¡A Hablar!
+                    </button>
+                </div>
+
+                <!-- Modo Solo Retos -->
+                <div class="level-card bg-orange-500 dark:bg-amber-600 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between transition-all transform hover:scale-105 md:col-span-2 lg:col-span-1">
+                    <div>
+                        <h3 class="text-2xl font-bold">Modo Solo Retos 🤸</h3>
+                        <p class="text-sm mt-2 font-normal">¡Para cuando solo quieren acción! Retos físicos y divertidos de todos los niveles.</p>
+                    </div>
+                    <button onclick="selectLevel(5)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-orange-600 dark:bg-amber-700 rounded-full shadow-lg hover:bg-orange-700 dark:hover:bg-amber-800 transition-all">
+                        ¡A Retar!
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pantalla de juego -->
+        <div id="game-screen" class="hidden space-y-6 w-full">
+            <div class="flex items-center justify-between w-full mb-4">
+                <div class="flex flex-col items-start">
+                    <span id="player1-score-display" class="text-sm font-semibold text-gray-500 dark:text-gray-400"></span>
+                    <span id="player-turn" class="text-xl font-bold text-gray-700 dark:text-gray-100"></span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span id="player2-score-display" class="text-sm font-semibold text-gray-500 dark:text-gray-400"></span>
+                </div>
+            </div>
+            <div id="question-box" class="bg-gray-100 dark:bg-gray-700 p-8 rounded-2xl shadow-inner min-h-[250px] flex items-center justify-center">
+                <p id="question-text" class="text-2xl text-gray-800 dark:text-gray-100 font-semibold leading-relaxed"></p>
+            </div>
+            <div id="action-buttons" class="w-full flex justify-center space-x-4 mt-6">
+                <button onclick="addPointAndNext()" class="flex-1 py-4 px-6 text-lg font-semibold text-white bg-green-500 dark:bg-emerald-500 rounded-full shadow-lg hover:bg-green-600 dark:hover:bg-emerald-600 transition-all transform hover:scale-105">
+                    ¡Lo logré! 🎉
+                </button>
+                <button onclick="nextQuestion()" class="flex-1 py-4 px-6 text-lg font-semibold text-white bg-gray-400 dark:bg-gray-600 rounded-full shadow-lg hover:bg-gray-500 dark:hover:bg-gray-700 transition-all transform hover:scale-105">
+                    Pasar ➡️
+                </button>
+            </div>
+            <button onclick="restartGame()" class="mt-4 text-pink-500 hover:text-pink-700 dark:text-fuchsia-400 dark:hover:text-fuchsia-500 transition-colors">Reiniciar</button>
+        </div>
+        
+        <!-- Pantalla final -->
+        <div id="end-screen" class="hidden space-y-6 w-full">
+            <h2 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-red-500 dark:from-fuchsia-400 dark:to-cyan-400 mb-2">¡Fin del Juego! 🏁</h2>
+            <p id="winner-message" class="text-2xl font-semibold text-gray-800 dark:text-gray-100"></p>
+            <p id="final-scores" class="text-xl text-gray-600 dark:text-gray-400"></p>
+            <p class="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mt-4">El perdedor debe cumplir una petición del ganador. ¡Elijan con sabiduría! 😏</p>
+            <button onclick="restartGame()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105">Jugar de Nuevo ✨</button>
+        </div>
+
+        <!-- Modal de consentimiento -->
+        <div id="consent-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm">
+                <h3 class="text-3xl font-bold text-red-600 dark:text-cyan-400 mb-4">¡Importante! ⚠️</h3>
+                <p class="text-gray-700 dark:text-gray-300 mb-6 text-lg leading-relaxed">
+                    Las preguntas en este modo son más atrevidas. La comunicación y el respeto son la clave. Si en algún momento no se sienten cómodos, pueden saltar la pregunta o terminar el juego.
+                    <br><br>
+                    <span class="font-bold">¡El consentimiento es sexy! 😉</span>
+                </p>
+                <button onclick="closeConsentModal()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-red-600 dark:bg-cyan-600 rounded-full shadow-lg hover:bg-red-700 dark:hover:bg-cyan-700 transition-all transform hover:scale-105">Entendido, ¡continuar! 👍</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const startScreen = document.getElementById('start-screen');
+        const levelScreen = document.getElementById('level-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const endScreen = document.getElementById('end-screen');
+        const consentModal = document.getElementById('consent-modal');
+        const player1Input = document.getElementById('player1-name');
+        const player2Input = document.getElementById('player2-name');
+        const player1ScoreDisplay = document.getElementById('player1-score-display');
+        const player2ScoreDisplay = document.getElementById('player2-score-display');
+        const playerTurnSpan = document.getElementById('player-turn');
+        const questionText = document.getElementById('question-text');
+        const winnerMessage = document.getElementById('winner-message');
+        const finalScores = document.getElementById('final-scores');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+
+        let players = [];
+        let currentPlayerIndex = 0;
+        let currentLevel = 0;
+        let questions = [];
+
+        // Base de datos de preguntas y desafíos
+        const allQuestions = [
+            // Nivel 1: Inicia la Conversación
+            { type: 'trivia', level: 1, question: '¿Cuál es la película que más has visto y por qué?' },
+            { type: 'trivia', level: 1, question: 'Si pudieras viajar a cualquier lugar del mundo ahora mismo, ¿a dónde irías y con quién?' },
+            { type: 'trivia', level: 1, question: '¿Qué es lo que más admiras del otro?' },
+            { type: 'trivia', level: 1, question: '¿Cuál es tu recuerdo más feliz de nuestra relación hasta ahora?' },
+            { type: 'dare', level: 1, question: 'Dale a tu pareja un masaje de hombros de 60 segundos.' },
+            { type: 'trivia', level: 1, question: 'Si tuvieras un superpoder, ¿cuál sería?' },
+            { type: 'trivia', level: 1, question: '¿Qué canción te recuerda a nosotros?' },
+            { type: 'dare', level: 1, question: 'Escribe un mensaje en la espalda de tu pareja con el dedo para que lo adivine.' },
+            { type: 'trivia', level: 1, question: '¿Cuál es tu cita ideal?' },
+            { type: 'trivia', level: 1, question: '¿Qué harías si ganaras la lotería?' },
+            { type: 'trivia', level: 1, question: '¿Qué es lo que más te hace reír de mí?' },
+            { type: 'dare', level: 1, question: 'Canta una canción romántica para tu pareja, pero solo con el ritmo.' },
+
+            // Nivel 2: Explora Juntos
+            { type: 'trivia', level: 2, question: '¿Cuál es un momento en el que te sentiste especialmente conectado/a conmigo?' },
+            { type: 'trivia', level: 2, question: '¿Qué es algo que te gustaría hacer más en nuestra relación?' },
+            { type: 'dare', level: 2, question: 'Besa a tu pareja en el cuello durante 15 segundos.' },
+            { type: 'trivia', level: 2, question: 'Describe tres cosas que te ponen nervioso/a y una que te relaja.' },
+            { type: 'dare', level: 2, question: 'Hazle cosquillas a tu pareja hasta que se rinda.' },
+            { type: 'trivia', level: 2, question: '¿Qué te atrajo de mí al principio?' },
+            { type: 'dare', level: 2, question: 'Dale un masaje de pies a tu pareja mientras le dices algo que amas de ella/él.' },
+            { type: 'trivia', level: 2, question: '¿Cuál es una fantasía que tienes que no me has contado?' },
+            { type: 'trivia', level: 2, question: '¿Qué es lo más aventurero que has hecho?' },
+            { type: 'dare', level: 2, question: 'Dale a tu pareja una bofetada en el trasero y un beso en el cuello.' },
+            { type: 'trivia', level: 2, question: '¿Qué es lo que más te gusta de nuestra vida sexual?' },
+            { type: 'dare', level: 2, question: 'Hagan una pose de yoga juntos, o una pose que les resulte divertida.' },
+
+            // Nivel 3: Sé Atrevido
+            { type: 'trivia', level: 3, question: '¿Cuál es la parte de mi cuerpo que más te excita?' },
+            { type: 'dare', level: 3, question: 'Quítale una prenda de ropa a tu pareja usando solo la boca y las manos.' },
+            { type: 'trivia', level: 3, question: 'Describe tu fantasía sexual más audaz.' },
+            { type: 'dare', level: 3, question: 'Lame crema batida del cuerpo de tu pareja.' },
+            { type: 'trivia', level: 3, question: 'Si tuvieras que elegir una posición sexual para el resto de tu vida, ¿cuál sería?' },
+            { type: 'dare', level: 3, question: 'Ponte una venda en los ojos y deja que tu pareja te toque donde quiera.' },
+            { type: 'trivia', level: 3, question: '¿Qué es lo más salvaje que has hecho o quisieras hacer en la cama?' },
+            { type: 'dare', level: 3, question: 'Simula el sexo oral con una fruta o verdura.' },
+            { type: 'trivia', level: 3, question: '¿Qué es lo que más te gusta de nuestra vida sexual?' },
+            { type: 'dare', level: 3, question: '¡Desnúdate completamente y haz un baile provocador para tu pareja!' },
+            { type: 'trivia', level: 3, question: '¿Qué te hace sentir más sexy cuando estamos juntos?' },
+            { type: 'dare', level: 3, question: 'Toma un trago de una bebida y pásalo de boca a boca con tu pareja.' },
+        ];
+        
+        // Función para barajar un array
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+            sunIcon.classList.toggle('hidden');
+            moonIcon.classList.toggle('hidden');
+        }
+
+        function startGame() {
+            const player1Name = player1Input.value.trim() || 'Jugador 1';
+            const player2Name = player2Input.value.trim() || 'Jugador 2';
+            players = [
+                { name: player1Name, score: 0 },
+                { name: player2Name, score: 0 }
+            ];
+            updateScores(); // Muestra los puntajes iniciales
+            startScreen.classList.add('hidden');
+            levelScreen.classList.remove('hidden');
+        }
+
+        function selectLevel(level) {
+            currentLevel = level;
+            
+            // Selecciona las preguntas según el modo
+            if (level === 0) { // Modo Variado
+                questions = allQuestions.slice();
+            } else if (level === 4) { // Solo Preguntas
+                questions = allQuestions.filter(q => q.type === 'trivia');
+            } else if (level === 5) { // Solo Retos
+                questions = allQuestions.filter(q => q.type === 'dare');
+            } else { // Niveles 1, 2, 3
+                questions = allQuestions.filter(q => q.level === level);
+            }
+
+            shuffle(questions);
+            
+            // Mostrar modal de consentimiento si el modo lo requiere
+            if (currentLevel === 3 || currentLevel === 0 || currentLevel === 5) {
+                consentModal.classList.remove('hidden');
+            } else {
+                showGameScreen();
+            }
+        }
+        
+        function closeConsentModal() {
+            consentModal.classList.add('hidden');
+            showGameScreen();
+        }
+
+        function showGameScreen() {
+            levelScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            nextQuestion();
+        }
+
+        function updateScores() {
+            player1ScoreDisplay.textContent = `${players[0].name}: ${players[0].score} puntos`;
+            player2ScoreDisplay.textContent = `${players[1].name}: ${players[1].score} puntos`;
+        }
+
+        function addPointAndNext() {
+            // Añade un punto al jugador actual
+            players[currentPlayerIndex].score++;
+            updateScores();
+
+            // Pasa a la siguiente pregunta
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            if (questions.length === 0) {
+                endGame();
+                return;
+            }
+
+            const currentQuestion = questions.pop();
+            questionText.textContent = currentQuestion.question;
+            playerTurnSpan.textContent = `Turno de ${players[currentPlayerIndex].name}`;
+            
+            // Cambiar de jugador para la siguiente ronda
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        }
+
+        function endGame() {
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+
+            const player1 = players[0];
+            const player2 = players[1];
+
+            let winner, loser;
+
+            if (player1.score > player2.score) {
+                winner = player1;
+                loser = player2;
+                winnerMessage.textContent = `¡${winner.name} ha ganado! 🎉`;
+            } else if (player2.score > player1.score) {
+                winner = player2;
+                loser = player1;
+                winnerMessage.textContent = `¡${winner.name} ha ganado! 🎉`;
+            } else {
+                // Empate
+                winnerMessage.textContent = "¡Es un empate! Nadie gana ni pierde. 🤝";
+                finalScores.textContent = `Ambos tienen ${player1.score} puntos.`;
+                return;
+            }
+
+            finalScores.textContent = `${winner.name}: ${winner.score} puntos | ${loser.name}: ${loser.score} puntos.`;
+        }
+
+        function restartGame() {
+            endScreen.classList.add('hidden');
+            gameScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            currentPlayerIndex = 0;
+            currentLevel = 0;
+            questions = [];
+            player1Input.value = '';
+            player2Input.value = '';
+        }
+    </script>
+</body>
+</html>
