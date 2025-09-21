@@ -65,7 +65,7 @@
     <div id="game-container" class="w-full max-w-4xl bg-white dark:bg-gray-800 p-6 md:p-10 rounded-3xl shadow-2xl flex flex-col items-center text-center transition-all duration-500 transform scale-100 animate-pulse-slow">
         <!-- Pantalla de inicio -->
         <div id="start-screen" class="space-y-6 w-full">
-            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-red-500 dark:from-fuchsia-400 dark:to-cyan-400 mb-2 text-shadow-lg">Juego para Parejas ❤️</h1>
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-red-500 dark:from-fuchsia-400 dark:to-cyan-400 mb-2 text-shadow-lg">Juego para Parejas <span id="heart-icon" class="transition-colors duration-1000">❤️</span></h1>
             <p class="text-gray-600 dark:text-gray-400 text-sm">Desarrollador: PandA</p>
             <p class="text-gray-600 dark:text-gray-400 text-lg">Un juego de trivia y desafíos para descubrir y celebrar su conexión.</p>
             <div class="space-y-4">
@@ -146,6 +146,22 @@
                 </div>
             </div>
         </div>
+
+        <!-- Pantalla de selección de rondas -->
+        <div id="rounds-screen" class="hidden space-y-6 w-full">
+            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100">¿Cuántas rondas quieren jugar?</h2>
+            <div class="space-y-4">
+                <select id="total-rounds-select" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md">
+                    <option value="5">5 Rondas</option>
+                    <option value="10" selected>10 Rondas</option>
+                    <option value="15">15 Rondas</option>
+                    <option value="20">20 Rondas</option>
+                    <option value="30">30 Rondas</option>
+                    <option value="50">50 Rondas (Largo)</option>
+                </select>
+            </div>
+            <button onclick="selectRounds()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105">¡Empezar Partida! 🎉</button>
+        </div>
         
         <!-- Pantalla de juego -->
         <div id="game-screen" class="hidden space-y-6 w-full">
@@ -157,6 +173,10 @@
                 <div class="flex flex-col items-end">
                     <span id="player2-score-display" class="text-sm font-semibold text-gray-500 dark:text-gray-400"></span>
                 </div>
+            </div>
+            <div class="flex items-center justify-center space-x-4 mb-4">
+                <p id="round-display" class="text-sm font-semibold text-gray-500 dark:text-gray-400"></p>
+                <div id="timer-display" class="w-8 h-8 flex items-center justify-center rounded-full bg-pink-500 dark:bg-fuchsia-600 text-white font-bold shadow-md"></div>
             </div>
             <div id="question-box" class="bg-gray-100 dark:bg-gray-700 p-8 rounded-2xl shadow-inner min-h-[250px] flex items-center justify-center">
                 <p id="question-text" class="text-2xl text-gray-800 dark:text-gray-100 font-semibold leading-relaxed"></p>
@@ -199,11 +219,13 @@
         const gameContainer = document.getElementById('game-container');
         const startScreen = document.getElementById('start-screen');
         const levelScreen = document.getElementById('level-screen');
+        const roundsScreen = document.getElementById('rounds-screen');
         const gameScreen = document.getElementById('game-screen');
         const endScreen = document.getElementById('end-screen');
         const consentModal = document.getElementById('consent-modal');
         const player1Input = document.getElementById('player1-name');
         const player2Input = document.getElementById('player2-name');
+        const totalRoundsSelect = document.getElementById('total-rounds-select');
         const player1ScoreDisplay = document.getElementById('player1-score-display');
         const player2ScoreDisplay = document.getElementById('player2-score-display');
         const playerTurnSpan = document.getElementById('player-turn');
@@ -212,11 +234,32 @@
         const finalScores = document.getElementById('final-scores');
         const sunIcon = document.getElementById('sun-icon');
         const moonIcon = document.getElementById('moon-icon');
+        const roundDisplay = document.getElementById('round-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const heartIcon = document.getElementById('heart-icon');
 
         let players = [];
         let currentPlayerIndex = 0;
         let currentLevel = 0;
         let questions = [];
+        let totalRounds = 10;
+        let currentRound = 1;
+        let timerInterval;
+        const TIME_LIMIT = 30; // Segundos
+
+        // Colores para el corazón
+        const heartColors = ['text-red-500', 'text-pink-500', 'text-fuchsia-500', 'text-purple-500', 'text-indigo-500', 'text-cyan-500'];
+        let currentColorIndex = 0;
+
+        // Función para cambiar el color del corazón
+        function changeHeartColor() {
+            heartIcon.classList.remove(heartColors[currentColorIndex]);
+            currentColorIndex = (currentColorIndex + 1) % heartColors.length;
+            heartIcon.classList.add(heartColors[currentColorIndex]);
+        }
+
+        // Inicia el cambio de color del corazón al cargar la página
+        setInterval(changeHeartColor, 1500);
 
         // Base de datos de preguntas y desafíos
         const allQuestions = [
@@ -248,7 +291,7 @@
             { type: 'trivia', level: 2, question: '¿Qué es lo que más te gusta de nuestra vida sexual?' },
             { type: 'dare', level: 2, question: 'Hagan una pose de yoga juntos, o una pose que les resulte divertida.' },
 
-            // Nivel 3: Sé Atrevido
+            // Nivel 3: Sé Atrevido (con un tono más íntimo y sensual)
             { type: 'trivia', level: 3, question: '¿Cuál es la parte de mi cuerpo que más te excita?' },
             { type: 'dare', level: 3, question: 'Quítale una prenda de ropa a tu pareja usando solo la boca y las manos.' },
             { type: 'trivia', level: 3, question: 'Describe tu fantasía sexual más audaz.' },
@@ -261,6 +304,16 @@
             { type: 'dare', level: 3, question: '¡Desnúdate completamente y haz un baile provocador para tu pareja!' },
             { type: 'trivia', level: 3, question: '¿Qué te hace sentir más sexy cuando estamos juntos?' },
             { type: 'dare', level: 3, question: 'Toma un trago de una bebida y pásalo de boca a boca con tu pareja.' },
+            { type: 'dare', level: 3, question: 'Permite que tu pareja te venda los ojos y te dé tres besos sorpresa. Tienes que adivinar dónde te ha besado.' },
+            { type: 'trivia', level: 3, question: '¿Cuál es tu fantasía sexual de rol más secreta?' },
+            { type: 'dare', level: 3, question: 'Toma la mano de tu pareja y guía su tacto a una parte de tu cuerpo que te gusta que toquen, sin decir una palabra.' },
+            { type: 'trivia', level: 3, question: '¿Qué es algo que te gustaría probar sexualmente que no hemos hecho?' },
+            { type: 'dare', level: 3, question: 'Cierra los ojos y adivina con qué parte de mi cuerpo te estoy tocando.' },
+            { type: 'dare', level: 3, question: 'Dale a tu pareja un beso apasionado de al menos 10 segundos.' },
+            { type: 'trivia', level: 3, question: 'Describe un lugar donde te gustaría que te besara por primera vez.' },
+            { type: 'dare', level: 3, question: 'Haz un \'strip tease\' sensual, pero en cámara lenta, quitándote solo una prenda.' },
+            { type: 'dare', level: 3, question: 'Susurra en mi oído algo que te excita de mí.' },
+            { type: 'dare', level: 3, question: 'Baila conmigo una canción sensual, manteniéndote pegado a mí todo el tiempo.' },
         ];
         
         // Función para barajar un array
@@ -285,7 +338,6 @@
                 { name: player1Name, score: 0 },
                 { name: player2Name, score: 0 }
             ];
-            updateScores(); // Muestra los puntajes iniciales
             startScreen.classList.add('hidden');
             levelScreen.classList.remove('hidden');
         }
@@ -310,50 +362,93 @@
             if (currentLevel === 3 || currentLevel === 0 || currentLevel === 5) {
                 consentModal.classList.remove('hidden');
             } else {
-                showGameScreen();
+                showRoundsScreen();
             }
         }
+
+        function showRoundsScreen() {
+            levelScreen.classList.add('hidden');
+            roundsScreen.classList.remove('hidden');
+        }
         
-        function closeConsentModal() {
-            consentModal.classList.add('hidden');
+        function selectRounds() {
+            totalRounds = parseInt(totalRoundsSelect.value);
+            currentRound = 1;
             showGameScreen();
         }
 
+        function closeConsentModal() {
+            consentModal.classList.add('hidden');
+            showRoundsScreen();
+        }
+
         function showGameScreen() {
-            levelScreen.classList.add('hidden');
+            roundsScreen.classList.add('hidden');
             gameScreen.classList.remove('hidden');
+            updateScores();
             nextQuestion();
         }
 
         function updateScores() {
             player1ScoreDisplay.textContent = `${players[0].name}: ${players[0].score} puntos`;
             player2ScoreDisplay.textContent = `${players[1].name}: ${players[1].score} puntos`;
+            roundDisplay.textContent = `Ronda ${currentRound} de ${totalRounds}`;
+        }
+
+        function startTimer() {
+            let timeLeft = TIME_LIMIT;
+            timerDisplay.textContent = timeLeft;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    nextQuestion();
+                }
+            }, 1000);
         }
 
         function addPointAndNext() {
-            // Añade un punto al jugador actual
+            clearInterval(timerInterval); // Detiene el temporizador
             players[currentPlayerIndex].score++;
             updateScores();
-
-            // Pasa a la siguiente pregunta
             nextQuestion();
         }
 
         function nextQuestion() {
-            if (questions.length === 0) {
+            clearInterval(timerInterval); // Detiene el temporizador
+            
+            // Comprobar si se ha llegado al final de las rondas
+            if (currentRound > totalRounds) {
                 endGame();
                 return;
+            }
+
+            // Si se acaban las preguntas, barajar y continuar
+            if (questions.length === 0) {
+                questions = allQuestions.slice();
+                shuffle(questions);
             }
 
             const currentQuestion = questions.pop();
             questionText.textContent = currentQuestion.question;
             playerTurnSpan.textContent = `Turno de ${players[currentPlayerIndex].name}`;
             
+            // Inicia el temporizador para la nueva pregunta
+            startTimer();
+
             // Cambiar de jugador para la siguiente ronda
             currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+
+            // Avanzar a la siguiente ronda si el turno vuelve al Jugador 1
+            if (currentPlayerIndex === 0) {
+                currentRound++;
+                updateScores();
+            }
         }
 
         function endGame() {
+            clearInterval(timerInterval); // Detiene el temporizador final
             gameScreen.classList.add('hidden');
             endScreen.classList.remove('hidden');
 
@@ -381,14 +476,17 @@
         }
 
         function restartGame() {
+            clearInterval(timerInterval); // Asegura que el temporizador se detenga al reiniciar
             endScreen.classList.add('hidden');
             gameScreen.classList.add('hidden');
+            roundsScreen.classList.add('hidden');
             startScreen.classList.remove('hidden');
             currentPlayerIndex = 0;
             currentLevel = 0;
             questions = [];
             player1Input.value = '';
             player2Input.value = '';
+            totalRoundsSelect.value = '10';
         }
     </script>
 </body>
