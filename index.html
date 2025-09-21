@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Juego para Parejas</title>
+    <!-- Configuración de Tailwind para el modo oscuro -->
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -410,111 +411,6 @@
     </div>
     
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        setLogLevel('debug');
-        
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        let userId = null;
-        window.db = db;
-        window.appId = appId;
-        
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-                console.log("User is signed in with UID:", userId);
-            } else {
-                console.log("No user is signed in. Attempting anonymous sign-in.");
-                try {
-                    await signInAnonymously(auth);
-                    userId = auth.currentUser.uid;
-                    console.log("Anonymous sign-in successful. UID:", userId);
-                } catch (error) {
-                    console.error("Anonymous sign-in failed:", error);
-                }
-            }
-            window.userId = userId;
-            window.loadGame();
-        });
-        
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            signInWithCustomToken(auth, __initial_auth_token).catch((error) => {
-                console.error("Error signing in with custom token:", error);
-            });
-        }
-        
-        window.getCustomQuestions = async () => {
-            if (!window.userId) return [];
-            try {
-                const q = query(collection(db, `artifacts/${appId}/users/${userId}/custom_questions`));
-                const querySnapshot = await getDocs(q);
-                return querySnapshot.docs.map(doc => doc.data().question);
-            } catch (error) {
-                console.error("Error getting custom questions:", error);
-                return [];
-            }
-        };
-
-        window.saveCustomQuestion = async (question) => {
-            if (!window.userId) return;
-            try {
-                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/custom_questions`), {
-                    question: question,
-                    timestamp: new Date()
-                });
-                console.log("Question saved:", question);
-            } catch (error) {
-                console.error("Error saving custom question:", error);
-            }
-        };
-
-        window.saveGameState = async (state) => {
-            if (!window.userId) return;
-            try {
-                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/game_state/current_game`), state);
-            } catch (error) {
-                console.error("Error saving game state:", error);
-            }
-        };
-
-        window.loadGameState = async () => {
-            if (!window.userId) return null;
-            try {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/game_state/current_game`);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    return docSnap.data();
-                } else {
-                    return null;
-                }
-            } catch (error) {
-                console.error("Error loading game state:", error);
-                return null;
-            }
-        };
-
-        // Array de colores para el corazón
-        const heartColors = ['#f472b6', '#ef4444', '#ec4899', '#a855f7', '#06b6d4'];
-        let currentColorIndex = 0;
-        const heartIcon = document.getElementById('heart-icon');
-
-        function changeHeartColor() {
-            if (heartIcon) {
-                currentColorIndex = (currentColorIndex + 1) % heartColors.length;
-                heartIcon.style.color = heartColors[currentColorIndex];
-            }
-        }
-
-        setInterval(changeHeartColor, 1000);
-
-        // Referencias a los elementos del DOM
         const startScreen = document.getElementById('start-screen');
         const levelScreen = document.getElementById('level-screen');
         const roundsScreen = document.getElementById('rounds-screen');
@@ -546,7 +442,6 @@
         const languageSelect = document.getElementById('language-select');
         const clickSound = new Audio('https://cdn.pixabay.com/audio/2023/12/03/audio_f83f2a2818.mp3'); 
         
-        // Variables del juego
         let player1Name, player2Name, player1Prize, player2Prize;
         let player1Score = 0;
         let player2Score = 0;
@@ -556,17 +451,18 @@
         let currentLevel = 1;
         let timerInterval;
         let timeLeft = 30;
-        let usedQuestions = {};
-        let customQuestions = [];
+        let usedQuestions = JSON.parse(localStorage.getItem('usedQuestions')) || {};
+        let customQuestions = JSON.parse(localStorage.getItem('customQuestions')) || [];
         let allQuestions = [];
 
-        // Datos del juego (preguntas y retos) en español e inglés
         const gameData = {
             es: {
                 title: "Juego para Parejas",
                 developer: "Desarrollador: PandA",
                 description: "Un juego de trivia y desafíos para descubrir y celebrar su conexión.",
                 startButton: "Empezar a Jugar ✨",
+                addQuestionButton: "Agregar a mi juego ✨",
+                playCustomButton: "¡Jugar con mis retos! 🎉",
                 levelTitle: "Elige tu modo de juego",
                 level1Title: "Nivel 1: Conexión 🥰",
                 level1Desc: "Preguntas suaves y divertidas para conocerse mejor y fortalecer su vínculo.",
@@ -639,6 +535,8 @@
                 developer: "Developer: PandA",
                 description: "A trivia and challenge game to discover and celebrate your connection.",
                 startButton: "Start Playing ✨",
+                addQuestionButton: "Add to my game ✨",
+                playCustomButton: "Play with my challenges! 🎉",
                 levelTitle: "Choose your game mode",
                 level1Title: "Level 1: Connection 🥰",
                 level1Desc: "Soft and fun questions to get to know each other better and strengthen your bond.",
@@ -790,16 +688,15 @@
             updateTurnDisplay();
             updateRoundDisplay();
         }
-        
+
         languageSelect.addEventListener('change', loadTranslations);
-        
+
         const vibrate = (pattern) => {
             if (navigator.vibrate) {
                 navigator.vibrate(pattern);
             }
         };
 
-        // Función para cambiar de pantalla
         function showScreen(screenId) {
             startScreen.classList.add('hidden');
             levelScreen.classList.add('hidden');
@@ -820,8 +717,8 @@
             }
         }
         
-        window.loadGame = async () => {
-            const savedGame = await window.loadGameState();
+        window.loadGame = () => {
+            const savedGame = JSON.parse(localStorage.getItem('gameState'));
             if (savedGame) {
                 player1Name = savedGame.player1Name;
                 player2Name = savedGame.player2Name;
@@ -834,6 +731,7 @@
                 totalRounds = savedGame.totalRounds;
                 currentLevel = savedGame.currentLevel;
                 usedQuestions = savedGame.usedQuestions;
+                customQuestions = JSON.parse(localStorage.getItem('customQuestions')) || [];
 
                 player1NameInput.value = player1Name;
                 player2NameInput.value = player2Name;
@@ -882,7 +780,8 @@
                 currentLevel,
                 usedQuestions
             };
-            window.saveGameState(gameState);
+            localStorage.setItem('gameState', JSON.stringify(gameState));
+            localStorage.setItem('customQuestions', JSON.stringify(customQuestions));
         }
 
         function showAlertModal(title, message) {
@@ -931,7 +830,7 @@
             clickSound.play();
 
             if (currentLevel === 7) {
-                customQuestions = await window.getCustomQuestions();
+                customQuestions = JSON.parse(localStorage.getItem('customQuestions')) || [];
                 showScreen('create-game-screen');
             } else if (currentLevel === 3 || currentLevel === 0 || currentLevel === 6) {
                 showConsentModal();
@@ -951,11 +850,11 @@
             showScreen('rounds-screen');
         };
 
-        window.addCustomQuestion = async function() {
+        window.addCustomQuestion = function() {
             const question = document.getElementById('custom-question-input').value.trim();
             if (question) {
-                await window.saveCustomQuestion(question);
                 customQuestions.push(question);
+                localStorage.setItem('customQuestions', JSON.stringify(customQuestions));
                 document.getElementById('custom-question-input').value = '';
                 showAlertModal('Éxito', '¡Pregunta o reto agregado!');
             }
@@ -1359,6 +1258,7 @@
             clearInterval(timerInterval);
             showScreen('start-screen');
             loadTranslations();
+            localStorage.removeItem('gameState');
         };
 
         window.toggleDarkMode = function() {
@@ -1381,8 +1281,12 @@
                 if (moonIconSettings) moonIconSettings.classList.add('hidden');
             }
         };
-        
-        loadTranslations();
+
+        window.onload = function() {
+            loadTranslations();
+            window.loadGame();
+        };
+
     </script>
 </body>
 </html>
