@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego Íntimo - Modo Tablero</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuración de Tailwind para el modo oscuro -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos base del Tablero (Pantalla Completa) */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle, #fce7f3 0%, #d8b4fe 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .dark body {
+            background: #111827;
+        }
+        
+        /* ----- ESTILOS DEL TABLERO ----- */
+        #gameBoard {
+            width: 600px; /* Tamaño del tablero 10x10 casillas de 60px */
+            height: 600px;
+            max-width: 90vw;
+            max-height: 90vw;
+            position: relative;
+            background-color: #fef3c7; /* Fondo tipo pergamino/cartón */
+            border: 8px solid #a855f7; /* Borde púrpura grueso */
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+        
+        /* Estilos específicos para las casillas */
+        .tile {
+            position: absolute; 
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease-in-out, background-color 0.3s;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            z-index: 5;
+            color: white;
+            font-weight: 600;
+        }
+        .tile-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .tile-text {
+            font-size: 0.55rem;
+            line-height: 1;
+            font-weight: 700;
+        }
+        
+        /* Fichas Dinámicas */
+        .token {
+            position: absolute;
+            width: 25px; 
+            height: 25px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            z-index: 15; 
+            transition: left 0.5s ease-in-out, top 0.5s ease-in-out;
+            opacity: 0.9;
+        }
+        
+        /* Foco visual para el jugador de turno */
+        .current-player-focus {
+            opacity: 1; 
+            box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.8), 0 0 10px 3px var(--token-glow-color);
+            animation: pulse-glow 1.5s infinite alternate;
+        }
+        @keyframes pulse-glow {
+            0% { transform: scale(1); opacity: 0.9; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+        
+        /* Estilo de la "carta" oculta en el centro */
+        .card-reveal-area {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-reveal-area:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(236, 72, 153, 0.5);
+        }
+
+        /* Estilos para el Selector de Jugador (Botones Dinámicos) */
+        .player-turn-selector {
+            width: 100%;
+            cursor: pointer;
+            transition: opacity 0.3s, transform 0.1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            padding: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: white; 
+        }
+        .player-turn-selector:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .player-turn-selector:not(:disabled):hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Estilos específicos para el selector de color */
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.1s, border 0.1s;
+            margin: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .color-swatch-selected {
+            border: 4px solid white;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 2px var(--color-swatch-bg); 
+        }
+        .color-selector-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+
+        /* Estilos del modal */
+        #challengeModal {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            animation: fadeInScale 0.3s ease-out;
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center p-8 transition-colors duration-500">
+    
+    <!-- Pantalla de inicio (Modo Tablero) -->
+    <div id="start-screen" class="space-y-6 w-full max-w-lg bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl text-center">
+        <h1 class="text-4xl font-extrabold text-pink-600 dark:text-fuchsia-400 mb-4">💘 Tablero Íntimo 🎲</h1>
+        <p class="text-gray-600 dark:text-gray-400 text-lg mb-6">Elige tu color, ingresa tus nombres y ¡a rodar el dado!</p>
+
+        <div class="space-y-4">
+            <!-- Jugador 1 -->
+            <input type="text" id="player1-name" placeholder="Nombre del Jugador 1" class="w-full px-4 py-3 rounded-xl border dark:bg-gray-700 dark:text-gray-100" oninput="updatePlayerName(0)">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color de Ficha</label>
+            <div id="player1ColorSelector" class="color-selector-grid"></div>
+
+            <!-- Jugador 2 -->
+            <input type="text" id="player2-name" placeholder="Nombre del Jugador 2" class="w-full px-4 py-3 rounded-xl border dark:bg-gray-700 dark:text-gray-100" oninput="updatePlayerName(1)">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color de Ficha</label>
+            <div id="player2ColorSelector" class="color-selector-grid"></div>
+        </div>
+
+        <button onclick="BoardGame.startGame()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105 mt-6">
+            ¡Empezar a Jugar!
+        </button>
+        <p class="text-xs text-gray-400 mt-4">Regla: El primero en completar una vuelta gana un deseo.</p>
+    </div>
+
+    <!-- Pantalla de juego (Tablero) -->
+    <div id="board-game-screen" class="hidden w-full max-w-4xl mx-auto flex-col items-center">
+        
+        <div class="absolute top-4 right-4 z-50">
+            <button onclick="localStorage.setItem('fromBoard', 'true'); window.location.href = 'index.html';" class="w-12 h-12 rounded-full bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow-lg hover:bg-gray-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 m-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </button>
+        </div>
+        
+        <div id="boardGameStatus" class="w-full max-w-lg mb-6 p-4 bg-white rounded-xl shadow-2xl">
+            <h1 class="text-3xl font-bold text-center text-pink-600 mb-2">💘 Modo Tablero Íntimo 🎲</h1>
+            <p id="boardGameTurnStatus" class="text-lg text-center font-semibold text-gray-700">Esperando el turno...</p>
+            <p id="boardDebugCounter" class="text-xs text-center text-gray-400 mt-2">Contador: 0</p>
+        </div>
+
+        <div id="gameBoard">
+            <!-- Las casillas se insertarán por JS -->
+            
+            <!-- Tokens (Fichas) de los Jugadores -->
+            <div id="playerToken-0" class="token hidden"></div>
+            <div id="playerToken-1" class="token hidden"></div>
+            
+            <!-- Centro de Control del Tablero (Hollow Center - Estilo Carta) -->
+            <div id="boardCenter" class="absolute inset-0 m-20 flex flex-col items-center justify-between bg-white rounded-lg shadow-inner p-4 text-center">
+                
+                <!-- Área de Estado/Carta -->
+                <div id="cardIndicator" class="w-full p-3 flex flex-col items-center justify-center bg-pink-100 rounded-lg border-2 border-pink-300 shadow-md h-28 mb-4">
+                    <p class="text-sm font-medium text-gray-500 mb-1">Regla de Victoria:</p>
+                    <p id="centerStatusText" class="text-center text-sm font-bold text-gray-700">El primer jugador en completar una vuelta gana un deseo.</p>
+                </div>
+
+                <!-- Área de Dado y Control (Contiene la acción) -->
+                <div class="w-full flex flex-col items-center justify-center mt-4">
+                    
+                    <!-- Contenedor de Lanzamiento de Dado (Estado Inicial) -->
+                    <div id="diceRollContainer">
+                        <p class="text-xs font-medium text-gray-500 mb-1">Resultado del Dado:</p>
+                        <div id="diceResult" class="text-4xl font-extrabold text-pink-700 mb-3 h-10 flex items-center justify-center transition-opacity duration-300 w-full"></div>
+                        
+                        <!-- Selector de Turno Manual -->
+                        <div id="playerSelector" class="w-full space-y-2 mt-4">
+                            
+                            <!-- Botón del Jugador 1 -->
+                            <button id="rollDiceBtn-0" class="player-turn-selector transition duration-200" onclick="BoardGame.rollDice(0)">
+                                <span class="text-sm font-bold">Lanza,</span> 
+                                <span id="player0NameBtn" class="text-lg font-extrabold">Jugador 1!</span>
+                            </button>
+
+                            <!-- Botón del Jugador 2 -->
+                            <button id="rollDiceBtn-1" class="player-turn-selector transition duration-200" onclick="BoardGame.rollDice(1)" disabled>
+                                <span class="text-sm font-bold">Lanza,</span> 
+                                <span id="player1NameBtn" class="text-lg font-extrabold">Jugador 2!</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contenedor de Revelación de Carta (Se activa después del movimiento) -->
+                    <div id="revealCardContainer" class="hidden w-full flex flex-col items-center">
+                        <p id="revealMessage" class="text-base font-bold text-gray-700 mb-3">¡Es hora de sacar la carta!</p>
+                        <!-- Botón de Carta Pequeña y Estética -->
+                        <button id="revealCardBtn" class="card-reveal-area w-full max-w-[140px] h-20 bg-pink-500 hover:bg-pink-600 text-white font-extrabold rounded-xl shadow-xl transition duration-300 transform hover:scale-105 border-b-4 border-pink-700 flex flex-col items-center justify-center" onclick="BoardGame.showChallengeModal()">
+                            <span id="cardIcon" class="text-3xl mb-1"></span>
+                            <span class="text-xs">¡SACAR CARTA!</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal para Preguntas y Retos -->
+        <div id="challengeModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+            <div class="modal-content bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full relative" onclick="event.stopPropagation()">
+                <h2 id="modalTitle" class="text-2xl font-bold mb-4 text-center text-pink-600"></h2>
+                <p id="modalType" class="text-sm font-medium mb-4 text-center text-gray-500"></p>
+                <p id="modalContent" class="text-lg mb-6 text-center text-gray-800 font-semibold"></p>
+                
+                <div class="flex justify-center w-full"> 
+                    <button id="successChallengeBtn" class="w-3/4 bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-full transition duration-200 shadow-md" onclick="BoardGame.successChallenge()">
+                        ¡Reto Cumplido!
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <script>
+        // =========================================================
+        // LÓGICA CORE DEL TABLERO (INCRUSTRADA AQUÍ)
+        // =========================================================
+
+        const BoardGame = {};
+
+        // --- CONSTANTES ---
+        const BOARD_COLOR_PALETTE = ['#EF4444', '#EC4899', '#A855F7', '#3B82F6', '#14B8A6', '#F97316', '#FACC15'];
+        let CHALLENGES = {
+            1: [
+                "¿Cuál es el recuerdo más gracioso que tienen juntos?", "Si pudieran viajar a cualquier lugar del mundo ahora mismo, ¿a dónde irían?", "Si tuvieras que describir su risa con una palabra, ¿cuál sería?", "¿Cuál es una canción que les recuerda el uno al otro?", "¿Qué superpoder elegirían tener juntos?", "¿Cuál es el hábito más adorable de tu pareja?", "¿Qué es algo que tu pareja hace que te hace sentir seguro/a?"
+            ],
+            2: [
+                "Describan el momento más romántico que han compartido.", "¿Cuál es su lugar favorito para besarse?", "Dale un masaje en los hombros a tu pareja durante un minuto.", "¿Cuál es la parte del cuerpo de tu pareja que más te atrae?", "Dense un beso que comience lento y se vuelva más apasionado.", "Dale a tu pareja una caricia en la mano que se sienta como un beso.", "Besa la espalda de tu pareja mientras le susurras algo que te gustaría hacerle."
+            ],
+            3: [
+                "Describe un lugar inesperado donde les gustaría tener una cita atrevida.", "¿Cuál ha sido la fantasía más loca que han tenido?", "Besa el cuello de tu pareja de forma muy sensual.", "Cuéntale una fantasía erótica que tengas con tu pareja y cómo te gustaría que fuera.", "Haz que tu pareja gima de placer sin tocarla.", "Susúrrale al oído a tu pareja algo que te gustaría hacer con ella en la cama.", "Describe la parte de tu cuerpo que más te gusta que te besen."
+            ],
+            couple: [
+                { type: 'reto', text: '¡Reto en Pareja! Dense un beso largo y apasionado, terminando con un susurro íntimo al oído.', level: 'Pareja' },
+                { type: 'reto', text: '¡Reto en Pareja! Ambos deben quitarse una prenda de vestir al mismo tiempo, sin usar las manos.', level: 'Pareja' },
+                { type: 'pregunta', text: '¡Pregunta en Pareja! Ambos deben nombrar su fantasía sexual MÁS PROHIBIDA y discutir cómo podrían acercarse a ella.', level: 'Pareja' }
+            ]
+        };
+        
+        BoardGame.MAX_PATH_TILE = 36;
+        BoardGame.TILE_SIZE = 60;
+        BoardGame.TOKEN_SIZE = 25;
+        BoardGame.TOKEN_CENTER_OFFSET = (BoardGame.TILE_SIZE / 2) - (BoardGame.TOKEN_SIZE / 2); 
+        BoardGame.TILE_COORDINATES = [
+            { x: 0, y: 0 }, { x: 0, y: 540 }, { x: 60, y: 540 }, { x: 120, y: 540 }, { x: 180, y: 540 },
+            { x: 240, y: 540 }, { x: 300, y: 540 }, { x: 360, y: 540 }, { x: 420, y: 540 },
+            { x: 480, y: 540 }, { x: 540, y: 540 }, { x: 540, y: 480 }, { x: 540, y: 420 }, 
+            { x: 540, y: 360 }, { x: 540, y: 300 }, { x: 540, y: 240 }, { x: 540, y: 180 }, 
+            { x: 540, y: 120 }, { x: 540, y: 60 }, { x: 540, y: 0 }, { x: 480, y: 0 }, 
+            { x: 420, y: 0 }, { x: 360, y: 0 }, { x: 300, y: 0 }, { x: 240, y: 0 }, 
+            { x: 180, y: 0 }, { x: 120, y: 0 }, { x: 60, y: 0 }, { x: 0, y: 0 }, 
+            { x: 0, y: 60 }, { x: 0, y: 120 }, { x: 0, y: 180 }, { x: 0, y: 240 },
+            { x: 0, y: 300 }, { x: 0, y: 360 }, { x: 0, y: 420 }, { x: 0, y: 480 },
+        ];
+        
+        BoardGame.tileData = Array.from({ length: BoardGame.MAX_PATH_TILE + 1 }, (_, i) => {
+            if (i === 0) return null;
+            let type;
+            if (i === 1) type = 'inicio';
+            else if (i % 9 === 1 || i % 9 === 0) type = 'especial'; 
+            else if (i % 2 === 0) type = 'reto';
+            else type = 'pregunta';
+            return { index: i, type };
+        }).filter(t => t);
+
+        // --- VARIABLES DE ESTADO DEL TABLERO ---
+        BoardGame.players = [];
+        BoardGame.turnCounter = 0;
+        BoardGame.isMoving = false;
+        BoardGame.isActionLocked = false;
+        BoardGame.currentChallenge = null;
+        BoardGame.lapCount = [0, 0];
+        BoardGame.player1GlobalScore = 0;
+        BoardGame.player2GlobalScore = 0;
+        let player1SelectedColor = '#EF4444';
+        let player2SelectedColor = '#A855F7';
+        
+        // --- REFERENCIAS DOM ---
+        let boardGameScreen, challengeModal, successChallengeBtn, startScreen;
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // --- UTILS ---
+        function getHoverColor(hex) {
+            let r = parseInt(hex.substring(1, 3), 16), g = parseInt(hex.substring(3, 5), 16), b = parseInt(hex.substring(5, 7), 16);
+            r = Math.max(0, r - 30); g = Math.max(0, g - 30); b = Math.max(0, b - 30);
+            const toHex = (c) => c.toString(16).padStart(2, '0');
+            return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+        }
+        function playClickSound() {
+            if (audioContext.state === 'suspended') { audioContext.resume(); }
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode); gainNode.connect(audioContext.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime); 
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.05);
+            oscillator.start(); oscillator.stop(audioContext.currentTime + 0.05);
+        }
+
+        // --- FUNCIONES DE INTERACCIÓN ---
+        BoardGame.getCurrentPlayerIndex = () => BoardGame.turnCounter % 2;
+        BoardGame.updatePlayerName = (playerId) => {
+            const name = document.getElementById(`player${playerId + 1}-name`).value || `Jugador ${playerId + 1}`;
+            if (BoardGame.players.length > playerId) {
+                 BoardGame.players[playerId].name = name;
+            }
+        };
+
+        BoardGame.startGame = () => {
+            playClickSound();
+            const p1Name = document.getElementById('player1-name').value;
+            const p2Name = document.getElementById('player2-name').value;
+            if (!p1Name || !p2Name) {
+                alert('Por favor, ingresa los nombres de ambos jugadores.');
+                return;
+            }
+            document.getElementById('start-screen').classList.add('hidden');
+            BoardGame.initializeBoardGame(
+                { name: p1Name, color: player1SelectedColor, prize: 'Un deseo especial', id: 0 },
+                { name: p2Name, color: player2SelectedColor, prize: 'Un deseo especial', id: 1 }
+            );
+            document.getElementById('board-game-screen').classList.remove('hidden');
+        };
+        
+        BoardGame.updateTokenPosition = (player) => {
+            const posIndex = player.position; 
+            const coords = BoardGame.TILE_COORDINATES[posIndex];
+            if (!coords) return;
+            
+            let leftPos = coords.x + BoardGame.TOKEN_CENTER_OFFSET;
+            let topPos = coords.y + BoardGame.TOKEN_CENTER_OFFSET;
+            
+            const otherPlayer = BoardGame.players[1 - player.id];
+            const sharingTile = otherPlayer.position === player.position && player.position !== 0;
+
+            if (sharingTile) {
+                if (player.id === 0) { leftPos -= 8; topPos -= 8; } else { leftPos += 8; topPos += 8; }
+            } else {
+                if (player.id === 0) { leftPos -= 2; topPos -= 2; } else { leftPos += 2; topPos += 2; }
+            }
+            
+            player.tokenElement.style.left = `${leftPos}px`;
+            player.tokenElement.style.top = `${topPos}px`;
+        };
+
+        BoardGame.initializeBoardGame = (p1Data, p2Data) => {
+            // 1. Sincronizar referencias DOM
+            boardGameScreen = document.getElementById('board-game-screen');
+            challengeModal = document.getElementById('challengeModal');
+
+            // 2. Inicializar puntuaciones globales
+            BoardGame.player1GlobalScore = p1Data.globalScore || 0;
+            BoardGame.player2GlobalScore = p2Data.globalScore || 0;
+            BoardGame.lapCount = [0, 0];
+
+            // 3. Inicializar jugadores
+            BoardGame.players = [
+                { ...p1Data, position: 0, tokenElement: document.getElementById(`playerToken-0`), btnElement: document.getElementById(`rollDiceBtn-0`) },
+                { ...p2Data, position: 0, tokenElement: document.getElementById(`playerToken-1`), btnElement: document.getElementById(`rollDiceBtn-1`) }
+            ];
+            
+            const boardElement = document.getElementById('gameBoard');
+            if (boardElement.children.length < 5) { // DIBUJAR CASILLAS SOLO UNA VEZ
+                 BoardGame.tileData.forEach(tile => {
+                    const tileDiv = document.createElement('div');
+                    let colorClass = ''; let label = ''; let icon = '';
+
+                    switch (tile.type) {
+                        case 'inicio': colorClass = 'bg-green-500 hover:bg-green-600 rounded-bl-xl'; label = 'INICIO'; icon = '🏁'; break;
+                        case 'especial': colorClass = 'bg-indigo-500 hover:bg-indigo-600'; label = 'BONO'; icon = '⭐'; break;
+                        case 'reto': colorClass = 'bg-pink-500 hover:bg-pink-600'; label = 'RETO'; icon = '🔥'; break;
+                        case 'pregunta': colorClass = 'bg-purple-500 hover:bg-purple-600'; label = 'PREGUNTA'; icon = '💬'; break;
+                    }
+                    if (tile.index === 10) colorClass += ' rounded-br-xl'; else if (tile.index === 19) colorClass += ' rounded-tr-xl'; else if (tile.index === 28) colorClass += ' rounded-tl-xl';
+                    
+                    tileDiv.className = `tile ${colorClass} text-white font-semibold text-center`;
+                    tileDiv.id = `tile-${tile.index}`;
+                    tileDiv.innerHTML = `<span class="absolute left-1 top-0 text-xs opacity-70 font-bold">${tile.index}</span>
+                        <div class="tile-content"><span class="tile-icon">${icon}</span><span class="tile-text uppercase">${label}</span></div>`;
+                    
+                    boardElement.appendChild(tileDiv);
+                    const coords = BoardGame.TILE_COORDINATES[tile.index];
+                    tileDiv.style.left = `${coords.x}px`;
+                    tileDiv.style.top = `${coords.y}px`;
+                });
+            }
+
+            BoardGame.players.forEach(player => {
+                player.tokenElement.classList.remove('hidden');
+                player.tokenElement.style.backgroundColor = player.color;
+                player.tokenElement.style.setProperty('--token-glow-color', player.color);
+                player.btnElement.style.backgroundColor = player.color;
+                player.btnElement.onmouseover = function() { this.style.backgroundColor = getHoverColor(player.color); }; 
+                player.btnElement.onmouseout = function() { this.style.backgroundColor = player.color; };
+                player.position = 1; 
+                BoardGame.updateTokenPosition(player);
+            });
+
+            document.getElementById('player0NameBtn').textContent = BoardGame.players[0].name + '!';
+            document.getElementById('player1NameBtn').textContent = BoardGame.players[1].name + '!';
+            document.getElementById('revealCardBtn').onclick = BoardGame.showChallengeModal; 
+            BoardGame.turnCounter = 0;
+            BoardGame.updateGameStatus(); 
+            BoardGame.nextTurn(); 
+        };
+
+        BoardGame.updateGameStatus = () => {
+            const currentPlayerId = BoardGame.getCurrentPlayerIndex();
+            const player = BoardGame.players[currentPlayerId];
+
+            const statusEl = document.getElementById('boardGameTurnStatus');
+            statusEl.innerHTML = `Turno de: <span class="font-extrabold" style="color:${player.color}">${player.name}</span>`;
+
+            document.getElementById('boardDebugCounter').textContent = `Contador: ${BoardGame.turnCounter} | Jugador ID: ${currentPlayerId}`;
+
+            document.getElementById('centerStatusText').innerHTML = "Vueltas completadas: " + BoardGame.lapCount[0] + " - " + BoardGame.lapCount[1] + ". El primer jugador en completar 2 vueltas gana un punto global.";
+
+            document.getElementById('diceRollContainer').classList.remove('hidden');
+            document.getElementById('revealCardContainer').classList.add('hidden');
+        };
+
+        BoardGame.rollDice = (playerId) => {
+            if (playerId !== BoardGame.getCurrentPlayerIndex() || BoardGame.isMoving) return;
+            playClickSound();
+            BoardGame.isMoving = true;
+            BoardGame.players.forEach(p => p.btnElement.disabled = true); 
+            const steps = Math.floor(Math.random() * 3) + 1; 
+            
+            document.getElementById('diceResult').textContent = '...';
+            document.getElementById('diceResult').classList.add('opacity-0');
+
+            setTimeout(() => {
+                document.getElementById('diceResult').textContent = steps;
+                document.getElementById('diceResult').classList.remove('opacity-0');
+                BoardGame.movePlayer(steps);
+            }, 300);
+        };
+        
+        BoardGame.movePlayer = (stepsRemaining) => {
+            const player = BoardGame.players[BoardGame.getCurrentPlayerIndex()];
+            if (stepsRemaining <= 0) {
+                setTimeout(() => { BoardGame.landOnTile(player.position); }, 300);
+                return;
+            }
+
+            let nextPosition = player.position + 1;
+            if (nextPosition > BoardGame.MAX_PATH_TILE) {
+                BoardGame.lapCount[player.id]++;
+                if (BoardGame.lapCount[player.id] >= 2) {
+                    // Determinar ganador
+                    let winner = null;
+                    if (BoardGame.lapCount[0] > BoardGame.lapCount[1]) {
+                        winner = 0;
+                    } else if (BoardGame.lapCount[1] > BoardGame.lapCount[0]) {
+                        winner = 1;
+                    } else {
+                        // Empate en vueltas, el más cerca
+                        const pos1 = BoardGame.players[0].position;
+                        const pos2 = BoardGame.players[1].position;
+                        const dist1 = BoardGame.MAX_PATH_TILE - pos1;
+                        const dist2 = BoardGame.MAX_PATH_TILE - pos2;
+                        if (dist1 < dist2) winner = 0;
+                        else if (dist2 < dist1) winner = 1;
+                        else winner = -1;
+                    }
+                    if (winner === 0) {
+                        BoardGame.player1GlobalScore++;
+                    } else if (winner === 1) {
+                        BoardGame.player2GlobalScore++;
+                    } else {
+                        BoardGame.player1GlobalScore++;
+                        BoardGame.player2GlobalScore++;
+                    }
+                    localStorage.setItem('player1GlobalScore', BoardGame.player1GlobalScore);
+                    localStorage.setItem('player2GlobalScore', BoardGame.player2GlobalScore);
+                    const winnerName = winner === 0 ? BoardGame.players[0].name : winner === 1 ? BoardGame.players[1].name : 'Empate';
+                    const winnerPrize = winner === 0 ? BoardGame.players[0].prize : winner === 1 ? BoardGame.players[1].prize : 'Un deseo compartido';
+                    BoardGame.showWinnerModal(winnerName, winnerPrize);
+                    return;
+                }
+                nextPosition = 1;
+            }
+            player.position = nextPosition;
+            BoardGame.updateTokenPosition(player);
+            setTimeout(() => { BoardGame.movePlayer(stepsRemaining - 1); }, 500);
+        };
+
+        BoardGame.landOnTile = (tileIndex) => {
+            const tile = BoardGame.tileData.find(t => t.index === tileIndex);
+            const playerWhoLanded = BoardGame.players[BoardGame.getCurrentPlayerIndex()]; 
+            const otherPlayer = BoardGame.players[1 - BoardGame.getCurrentPlayerIndex()];
+
+            if (!tile) { BoardGame.turnCounter++; BoardGame.nextTurn(); return; }
+            
+            if (tileIndex !== 1 && playerWhoLanded.position === otherPlayer.position) {
+                BoardGame.prepareChallenge('couple', 'couple', playerWhoLanded); 
+                return; 
+            }
+
+            let level = '1'; 
+            if (tileIndex >= 28) level = '3'; else if (tileIndex >= 15) level = '2'; 
+            
+            switch (tile.type) {
+                case 'pregunta': BoardGame.prepareChallenge('pregunta', level, playerWhoLanded); break;
+                case 'reto': BoardGame.prepareChallenge('reto', level, playerWhoLanded); break;
+                case 'especial': BoardGame.handleSpecialTile(playerWhoLanded); break;
+                case 'inicio':
+                default:
+                    BoardGame.turnCounter++; BoardGame.nextTurn(); break;
+            }
+        };
+
+        BoardGame.prepareChallenge = (type, level, playerToChallenge) => {
+            let pool;
+            if (level === 'couple') { pool = CHALLENGES.couple; }
+            else {
+                pool = CHALLENGES[String(level)] || [];
+                const isQuestion = type === 'pregunta';
+                pool = pool.filter(q => q.includes('?') === isQuestion);
+            }
+
+            const randomItem = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
+            const challengeText = randomItem ? (level === 'couple' ? randomItem.text : randomItem) : '¡Error!';
+            BoardGame.currentChallenge = {
+                type: type,
+                level: level === 'couple' ? 'Pareja' : (level === '1' ? 'Fácil' : level === '2' ? 'Medio' : 'Intenso'),
+                text: challengeText,
+                resolver: playerToChallenge
+            };
+
+            document.getElementById('diceRollContainer').classList.add('hidden');
+            document.getElementById('revealCardContainer').classList.remove('hidden');
+            
+            let message = BoardGame.currentChallenge.level === 'Pareja' ? 
+                `¡<span class="text-pink-600 font-extrabold">RETO EN PAREJA!</span>` : 
+                `¡<span style="color:${playerToChallenge.color}">${playerToChallenge.name}</span>, es hora de **REVELAR** tu carta!`;
+            
+            document.getElementById('revealMessage').innerHTML = message;
+            const icon = type === 'pregunta' ? '💬' : '🔥';
+            document.getElementById('cardIcon').textContent = icon;
+            BoardGame.isMoving = false; 
+        };
+
+        BoardGame.showChallengeModal = () => {
+            if (!BoardGame.currentChallenge) { BoardGame.turnCounter++; BoardGame.nextTurn(); return; }
+            const p = BoardGame.currentChallenge.resolver; 
+            
+            document.getElementById('diceRollContainer').classList.add('hidden');
+            document.getElementById('revealCardContainer').classList.add('hidden');
+
+            const isCoupleReto = BoardGame.currentChallenge.level === 'Pareja';
+            
+            document.getElementById('modalTitle').textContent = isCoupleReto ? 
+                '¡RETO EN PAREJA! 💋' : 
+                (BoardGame.currentChallenge.type === 'pregunta' ? 'Pregunta Íntima 💬' : 'Reto Íntimo 🔥');
+            
+            document.getElementById('modalType').textContent = isCoupleReto ? 
+                `¡Ambos Participan!` : 
+                `Nivel: ${BoardGame.currentChallenge.level.toUpperCase()} - Para: ${p.name}`;
+            
+            document.getElementById('modalContent').textContent = BoardGame.currentChallenge.text;
+
+            document.getElementById('successChallengeBtn').onclick = BoardGame.successChallenge; 
+            document.getElementById('successChallengeBtn').textContent = isCoupleReto ? '¡Reto en Pareja Cumplido!' : '¡Reto Cumplido!';
+            
+            document.getElementById('successChallengeBtn').style.backgroundColor = p.color;
+            document.getElementById('successChallengeBtn').onmouseover = function() { this.style.backgroundColor = getHoverColor(p.color); }; 
+            document.getElementById('successChallengeBtn').onmouseout = function() { this.style.backgroundColor = p.color; };
+            
+            challengeModal.classList.remove('hidden');
+        };
+
+        BoardGame.successChallenge = () => {
+            if (BoardGame.isActionLocked) return;
+            BoardGame.isActionLocked = true;
+            
+            playClickSound();
+            challengeModal.classList.add('hidden');
+            BoardGame.currentChallenge = null;
+            
+            setTimeout(() => {
+                BoardGame.turnCounter++; 
+                BoardGame.nextTurn();
+                BoardGame.isActionLocked = false;
+            }, 200); 
+        };
+
+        BoardGame.nextTurn = () => {
+            const currentPlayerId = BoardGame.getCurrentPlayerIndex();
+            const nextPlayer = BoardGame.players[currentPlayerId];
+            const previousPlayer = BoardGame.players[1 - currentPlayerId];
+            
+            BoardGame.updateGameStatus(); 
+
+            nextPlayer.btnElement.disabled = false;
+            nextPlayer.btnElement.style.backgroundColor = nextPlayer.color;
+            nextPlayer.btnElement.onmouseover = function() { this.style.backgroundColor = getHoverColor(nextPlayer.color); }; 
+            nextPlayer.btnElement.onmouseout = function() { this.style.backgroundColor = nextPlayer.color; };
+            
+            previousPlayer.btnElement.disabled = true;
+
+            previousPlayer.tokenElement.classList.remove('current-player-focus');
+            nextPlayer.tokenElement.classList.add('current-player-focus');
+            nextPlayer.tokenElement.style.setProperty('--token-glow-color', nextPlayer.color);
+
+            BoardGame.updateTokenPosition(previousPlayer); 
+            BoardGame.updateTokenPosition(nextPlayer);
+
+            document.getElementById('diceResult').textContent = '';
+            BoardGame.isMoving = false; 
+            
+            document.getElementById('diceRollContainer').classList.remove('hidden');
+            document.getElementById('revealCardContainer').classList.add('hidden');
+        };
+
+        BoardGame.showWinnerModal = (winnerName, winnerPrize) => {
+            // Lógica de ganador
+            challengeModal.classList.remove('hidden');
+            document.getElementById('modalTitle').textContent = '¡GANADOR POR VUELTAS COMPLETADAS! ❤️';
+            document.getElementById('modalType').textContent = `¡${winnerName} gana el punto global!`;
+            document.getElementById('modalContent').textContent = `Puntuación Global actualizada: ${BoardGame.players[0].name}: ${BoardGame.player1GlobalScore}, ${BoardGame.players[1].name}: ${BoardGame.player2GlobalScore}. "${winnerPrize}"`;
+
+            BoardGame.players.forEach(p => p.btnElement.disabled = true);
+
+            document.getElementById('successChallengeBtn').textContent = 'Reiniciar Juego';
+            document.getElementById('successChallengeBtn').onclick = () => { location.reload(); };
+        };
+        
+        // --- INICIALIZACIÓN DE PANTALLA ---
+        const createColorSelector = (containerElement, playerId) => {
+            if (!containerElement) return; 
+            containerElement.innerHTML = '';
+            BOARD_COLOR_PALETTE.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color;
+                swatch.style.setProperty('--color-swatch-bg', color);
+                swatch.dataset.color = color;
+                swatch.onclick = () => {
+                    containerElement.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('color-swatch-selected'));
+                    swatch.classList.add('color-swatch-selected');
+                    if (playerId === 0) { player1SelectedColor = color; } else { player2SelectedColor = color; }
+                };
+                containerElement.appendChild(swatch);
+            });
+            const defaultColor = playerId === 0 ? BOARD_COLOR_PALETTE[0] : BOARD_COLOR_PALETTE[2];
+            containerElement.querySelector(`[data-color="${defaultColor}"]`).click();
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const config = localStorage.getItem('boardGameConfig');
+            if (config) {
+                const data = JSON.parse(config);
+                // Usar preguntas de index.html
+                CHALLENGES = data.CHALLENGES;
+                // Ocultar pantalla de inicio y inicializar tablero directamente
+                document.getElementById('start-screen').classList.add('hidden');
+                BoardGame.initializeBoardGame(
+                    { name: data.player1Name, color: data.player1SelectedColor, prize: data.player1Prize, globalScore: data.player1GlobalScore, id: 0 },
+                    { name: data.player2Name, color: data.player2SelectedColor, prize: data.player2Prize, globalScore: data.player2GlobalScore, id: 1 }
+                );
+                document.getElementById('board-game-screen').classList.remove('hidden');
+            } else {
+                // Mostrar pantalla de inicio normal
+                createColorSelector(document.getElementById('player1ColorSelector'), 0);
+                createColorSelector(document.getElementById('player2ColorSelector'), 1);
+
+                // Inicializar jugadores con valores predeterminados
+                BoardGame.players = [
+                    { name: document.getElementById('player1-name').value || 'Jugador 1', color: player1SelectedColor },
+                    { name: document.getElementById('player2-name').value || 'Jugador 2', color: player2SelectedColor }
+                ];
+            }
+        });
+
+        // Exponer BoardGame al scope global
+        window.BoardGame = BoardGame;
+    </script>
+</body>
+</html>
