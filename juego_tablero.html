@@ -13,6 +13,7 @@
         }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="challenges.js"></script>
     <style>
         /* Estilos base del Tablero (Pantalla Completa) */
         body {
@@ -162,9 +163,83 @@
             from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
             to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
+        /* Nota de sanación dentro del modal */
+        .sanacion-note {
+            background: linear-gradient(90deg, rgba(236,72,153,0.06), rgba(168,85,247,0.04));
+            border-left: 4px solid rgba(236,72,153,0.25);
+            color: #6b21a8;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            text-align: left;
+            animation: slideFadeIn 360ms ease-out;
+        }
+        @keyframes slideFadeIn {
+            from { transform: translateY(-8px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Pulsación sutil para el botón de pasar */
+        .skip-pulse {
+            animation: pulse-slow 1.6s infinite;
+        }
+
+        /* Estilos para el Easter Egg: Corazón de Patty */
+        .patty-heart {
+            position: absolute;
+            right: 14px;
+            bottom: 14px;
+            width: 56px;
+            height: 56px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            background: linear-gradient(135deg,#ffecf8,#fde68a);
+            box-shadow: 0 6px 18px rgba(219,39,119,0.18);
+            border: 2px solid rgba(255,255,255,0.85);
+            transition: transform 160ms ease, box-shadow 160ms ease;
+            z-index: 55;
+        }
+        .patty-heart:hover { transform: translateY(-4px) scale(1.05); }
+        .patty-heart.pulse { animation: pulse-glow 1s infinite; }
+
+        /* Confetti pieces */
+        .confetti-piece {
+            position: absolute;
+            width: 8px;
+            height: 12px;
+            border-radius: 2px;
+            will-change: transform, opacity;
+            pointer-events: none;
+            opacity: 1;
+            transform: translateY(0) rotate(0deg) scale(1);
+            transition: transform 900ms cubic-bezier(.12,.7,.25,1), opacity 900ms ease-out;
+            z-index: 120;
+        }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center p-8 transition-colors duration-500">
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center pt-16 p-8 transition-colors duration-500">
+    <!-- Barra de navegación superior unificada (Tablero) - oculta hasta asignar nombres -->
+    <nav id="topNav" class="hidden fixed top-0 left-0 right-0 h-16 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-b z-60">
+        <div class="max-w-5xl mx-auto h-full flex items-center justify-between px-4">
+            <div class="flex items-center gap-4">
+                <div class="text-2xl font-extrabold text-pink-600">💘 Tablero Íntimo</div>
+                <button class="text-sm px-3 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onclick="localStorage.setItem('fromBoard', 'true'); window.location.href='index.html'">Menú</button>
+                <button class="text-sm px-3 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onclick="openQuestionsEditor()">Editor</button>
+                <button class="text-sm px-3 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onclick="openP2PModal()">Multijugador</button>
+            </div>
+            <div class="flex items-center gap-3">
+                <button class="text-sm px-3 py-1 rounded-md bg-emerald-500 text-white" onclick="exportBoardConfig()">Exportar</button>
+                <button class="text-sm px-3 py-1 rounded-md bg-gray-200" onclick="triggerBoardImport()">Importar</button>
+                <button class="text-sm px-3 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onclick="BoardGame.showHelpModal()">Atajos</button>
+                <button class="text-sm px-3 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onclick="BoardGame.showToast && BoardGame.showToast('Configuraciones en el menú principal')">Ajustes</button>
+            </div>
+        </div>
+    </nav>
     
     <!-- Pantalla de inicio (Modo Tablero) -->
     <div id="start-screen" class="space-y-6 w-full max-w-lg bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl text-center">
@@ -186,25 +261,43 @@
         <button onclick="BoardGame.startGame()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105 mt-6">
             ¡Empezar a Jugar!
         </button>
+        <!-- Botón de prueba: mostrar una pregunta de sanación (debug/QA) -->
+        <button onclick="BoardGame.testSanacion && BoardGame.testSanacion()" class="w-full py-2 px-4 text-sm font-medium text-white bg-gray-500 dark:bg-gray-600 rounded-full shadow-sm hover:bg-gray-600 transition-all mt-3">Probar pregunta de sanación</button>
         <p class="text-xs text-gray-400 mt-4">Regla: El primero en completar una vuelta gana un deseo.</p>
     </div>
 
     <!-- Pantalla de juego (Tablero) -->
-    <div id="board-game-screen" class="hidden w-full max-w-4xl mx-auto flex-col items-center">
+    <div id="board-game-screen" class="hidden w-full max-w-4xl mx-auto flex flex-col items-center justify-center min-h-screen">
         
-        <div class="absolute top-4 right-4 z-50">
-            <button onclick="localStorage.setItem('fromBoard', 'true'); window.location.href = 'index.html';" class="w-12 h-12 rounded-full bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow-lg hover:bg-gray-200">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 m-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </button>
+        <!-- (Botón de volver eliminado; ahora se usa la barra superior para 'Menú') -->
+    <!-- Modal de ayuda / atajos -->
+        <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-60 hidden">
+            <div class="bg-white rounded-xl p-6 max-w-md w-full text-left shadow-2xl" onclick="event.stopPropagation()">
+                <h3 class="text-xl font-bold mb-2">Atajos y Navegación</h3>
+                <ul class="list-disc pl-5 text-sm text-gray-700 mb-4">
+                    <li><strong>Espacio</strong>: Lanza el dado para el jugador de turno.</li>
+                    <li><strong>R</strong>: Revelar carta / mostrar modal de desafío.</li>
+                    <li><strong>S</strong>: Saltar pregunta sensible (cuando esté disponible).</li>
+                    <li><strong>Enter</strong>: Aceptar / marcar reto cumplido en modal.</li>
+                    <li><strong>Esc</strong>: Cerrar modal sin acción.</li>
+                </ul>
+                <div class="flex justify-end">
+                    <button class="px-4 py-2 rounded-md bg-pink-500 text-white" onclick="BoardGame.hideHelpModal()">Cerrar</button>
+                </div>
+            </div>
         </div>
-        
+
+    <!-- Easter Egg: Corazón de Patty -->
+    <div id="pattyHeart" class="patty-heart" title="Dale amor a Patty">❤️</div>
+
         <div id="boardGameStatus" class="w-full max-w-lg mb-6 p-4 bg-white rounded-xl shadow-2xl">
             <h1 class="text-3xl font-bold text-center text-pink-600 mb-2">💘 Modo Tablero Íntimo 🎲</h1>
             <p id="boardGameTurnStatus" class="text-lg text-center font-semibold text-gray-700">Esperando el turno...</p>
             <p id="boardDebugCounter" class="text-xs text-center text-gray-400 mt-2">Contador: 0</p>
+            <!-- Toast breve para notificaciones de bonificación / eventos -->
+            <div id="gameToast" class="hidden fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 text-white px-4 py-2 rounded-md shadow-lg z-50"></div>
         </div>
+
 
         <div id="gameBoard">
             <!-- Las casillas se insertarán por JS -->
@@ -259,10 +352,42 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal P2P mejorado (señalización manual copy/paste) -->
+        <div id="p2pModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999] p-4" style="backdrop-filter: blur(4px);">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-xl w-full transform transition-all duration-200 ease-out scale-95 opacity-0" id="p2pCard" role="dialog" aria-modal="true">
+                <div class="flex items-center justify-between p-4 border-b dark:border-gray-700">
+                    <div class="flex items-center gap-3">
+                        <h3 class="text-lg font-bold">Multijugador (P2P)</h3>
+                        <span id="p2pStatus" class="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">Desconectado</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="text-sm px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200" onclick="copyLocalSignal()">Copiar</button>
+                        <button aria-label="Cerrar" class="text-sm px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300" onclick="closeP2PModal()">Cerrar ✕</button>
+                    </div>
+                </div>
+                <div class="p-4 space-y-3">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Conecta con otra persona usando esta señal SDP. Crea una oferta y compártela, o pega la señal remota para aceptar.</p>
+                    <div>
+                        <label class="text-xs font-medium">Tu señal (oferta/respuesta)</label>
+                        <textarea id="localSignal" class="w-full p-2 h-28 rounded-md border dark:bg-gray-700 dark:text-gray-100"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium">Señal remota (pegar aquí)</label>
+                        <textarea id="remoteSignal" class="w-full p-2 h-28 rounded-md border dark:bg-gray-700 dark:text-gray-100"></textarea>
+                    </div>
+                    <div class="flex items-center justify-end gap-2">
+                        <button class="px-3 py-2 rounded-md bg-blue-500 text-white" onclick="createOffer()">Crear Oferta</button>
+                        <button class="px-3 py-2 rounded-md bg-green-500 text-white" onclick="acceptRemoteSignal()">Aceptar Señal Remota</button>
+                    </div>
+                    <p class="text-xs text-gray-400">Nota: Este flujo es manual. Ambas personas deben pegar/compartir la señal aquí.</p>
+                </div>
+            </div>
+        </div>
         
         <!-- Modal para Preguntas y Retos -->
         <div id="challengeModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
-            <div class="modal-content bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full relative" onclick="event.stopPropagation()">
+        <div class="modal-content bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full relative text-center" onclick="event.stopPropagation()">
                 <h2 id="modalTitle" class="text-2xl font-bold mb-4 text-center text-pink-600"></h2>
                 <p id="modalType" class="text-sm font-medium mb-4 text-center text-gray-500"></p>
                 <p id="modalContent" class="text-lg mb-6 text-center text-gray-800 font-semibold"></p>
@@ -286,22 +411,7 @@
 
         // --- CONSTANTES ---
         const BOARD_COLOR_PALETTE = ['#EF4444', '#EC4899', '#A855F7', '#3B82F6', '#14B8A6', '#F97316', '#FACC15'];
-        let CHALLENGES = {
-            1: [
-                "¿Cuál es el recuerdo más gracioso que tienen juntos?", "Si pudieran viajar a cualquier lugar del mundo ahora mismo, ¿a dónde irían?", "Si tuvieras que describir su risa con una palabra, ¿cuál sería?", "¿Cuál es una canción que les recuerda el uno al otro?", "¿Qué superpoder elegirían tener juntos?", "¿Cuál es el hábito más adorable de tu pareja?", "¿Qué es algo que tu pareja hace que te hace sentir seguro/a?"
-            ],
-            2: [
-                "Describan el momento más romántico que han compartido.", "¿Cuál es su lugar favorito para besarse?", "Dale un masaje en los hombros a tu pareja durante un minuto.", "¿Cuál es la parte del cuerpo de tu pareja que más te atrae?", "Dense un beso que comience lento y se vuelva más apasionado.", "Dale a tu pareja una caricia en la mano que se sienta como un beso.", "Besa la espalda de tu pareja mientras le susurras algo que te gustaría hacerle."
-            ],
-            3: [
-                "Describe un lugar inesperado donde les gustaría tener una cita atrevida.", "¿Cuál ha sido la fantasía más loca que han tenido?", "Besa el cuello de tu pareja de forma muy sensual.", "Cuéntale una fantasía erótica que tengas con tu pareja y cómo te gustaría que fuera.", "Haz que tu pareja gima de placer sin tocarla.", "Susúrrale al oído a tu pareja algo que te gustaría hacer con ella en la cama.", "Describe la parte de tu cuerpo que más te gusta que te besen."
-            ],
-            couple: [
-                { type: 'reto', text: '¡Reto en Pareja! Dense un beso largo y apasionado, terminando con un susurro íntimo al oído.', level: 'Pareja' },
-                { type: 'reto', text: '¡Reto en Pareja! Ambos deben quitarse una prenda de vestir al mismo tiempo, sin usar las manos.', level: 'Pareja' },
-                { type: 'pregunta', text: '¡Pregunta en Pareja! Ambos deben nombrar su fantasía sexual MÁS PROHIBIDA y discutir cómo podrían acercarse a ella.', level: 'Pareja' }
-            ]
-        };
+        // CHALLENGES cargado desde challenges.js (archivo compartido)
         
         BoardGame.MAX_PATH_TILE = 36;
         BoardGame.TILE_SIZE = 60;
@@ -340,6 +450,8 @@
         BoardGame.player2GlobalScore = 0;
         let player1SelectedColor = '#EF4444';
         let player2SelectedColor = '#A855F7';
+    // Dificultad por defecto (puede venir desde index via boardGameConfig)
+    BoardGame.difficulty = 'medium';
         
         // --- REFERENCIAS DOM ---
         let boardGameScreen, challengeModal, successChallengeBtn, startScreen;
@@ -373,6 +485,14 @@
             }
         };
 
+        // --- Top nav visibility helpers ---
+        function showTopNav() {
+            const n = document.getElementById('topNav'); if (n) n.classList.remove('hidden');
+        }
+        function hideTopNav() {
+            const n = document.getElementById('topNav'); if (n) n.classList.add('hidden');
+        }
+
         BoardGame.startGame = () => {
             playClickSound();
             const p1Name = document.getElementById('player1-name').value;
@@ -387,6 +507,7 @@
                 { name: p2Name, color: player2SelectedColor, prize: 'Un deseo especial', id: 1 }
             );
             document.getElementById('board-game-screen').classList.remove('hidden');
+            try { showTopNav(); } catch (e) {}
         };
         
         BoardGame.updateTokenPosition = (player) => {
@@ -480,7 +601,10 @@
 
             document.getElementById('boardDebugCounter').textContent = `Contador: ${BoardGame.turnCounter} | Jugador ID: ${currentPlayerId}`;
 
-            document.getElementById('centerStatusText').innerHTML = "Vueltas completadas: " + BoardGame.lapCount[0] + " - " + BoardGame.lapCount[1] + ". El primer jugador en completar 2 vueltas gana un punto global.";
+            // Mostrar también la dificultad seleccionada para que sea visible en el tablero
+            const diffLabel = (BoardGame.difficulty || 'medium');
+            const diffText = diffLabel.charAt(0).toUpperCase() + diffLabel.slice(1);
+            document.getElementById('centerStatusText').innerHTML = "Vueltas completadas: " + BoardGame.lapCount[0] + " - " + BoardGame.lapCount[1] + ". (Dificultad: " + diffText + ") El primer jugador en completar 2 vueltas gana un punto global.";
 
             document.getElementById('diceRollContainer').classList.remove('hidden');
             document.getElementById('revealCardContainer').classList.add('hidden');
@@ -577,21 +701,156 @@
             }
         };
 
-        BoardGame.prepareChallenge = (type, level, playerToChallenge) => {
-            let pool;
-            if (level === 'couple') { pool = CHALLENGES.couple; }
-            else {
-                pool = CHALLENGES[String(level)] || [];
-                const isQuestion = type === 'pregunta';
-                pool = pool.filter(q => q.includes('?') === isQuestion);
+        // Manejo de casilla especial (BONO): evita que el juego se quede detenido.
+        // Comportamiento configurable via BoardGame.gameSettings.bonusMode
+        BoardGame.handleSpecialTile = (player) => {
+            playClickSound();
+            // Si ya hay una acción en curso, simplemente avanza el turno
+            if (BoardGame.isActionLocked) {
+                BoardGame.turnCounter++; BoardGame.nextTurn();
+                return;
             }
 
-            const randomItem = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
-            const challengeText = randomItem ? (level === 'couple' ? randomItem.text : randomItem) : '¡Error!';
+            const settings = BoardGame.gameSettings || { bonusMode: 'mix', showToast: true };
+            const mode = settings.bonusMode || 'mix';
+            const doShowToast = settings.showToast !== false;
+
+            const cardAction = () => {
+                const type = Math.random() < 0.5 ? 'pregunta' : 'reto';
+                const level = '2';
+                if (doShowToast && BoardGame.showToast) BoardGame.showToast('BONO: saca una carta de nivel Medio');
+                BoardGame.prepareChallenge(type, level, player);
+            };
+
+            const moveAction = () => {
+                const steps = Math.floor(Math.random() * 3) + 1;
+                if (doShowToast && BoardGame.showToast) BoardGame.showToast('BONO: movimiento extra de ' + steps + ' casilla(s)');
+                document.getElementById('diceResult').textContent = steps;
+                document.getElementById('diceRollContainer').classList.remove('hidden');
+                document.getElementById('revealCardContainer').classList.add('hidden');
+                BoardGame.isMoving = true;
+                setTimeout(() => { BoardGame.movePlayer(steps); }, 300);
+            };
+
+            if (mode === 'mix') {
+                Math.random() < 0.5 ? cardAction() : moveAction();
+            } else if (mode === 'move') {
+                moveAction();
+            } else if (mode === 'card') {
+                cardAction();
+            } else {
+                Math.random() < 0.5 ? cardAction() : moveAction();
+            }
+        };
+
+        // Toast breve para notificaciones
+        BoardGame.showToast = (text, duration = 2200) => {
+            const toast = document.getElementById('gameToast');
+            if (!toast) return;
+            toast.textContent = text;
+            toast.classList.remove('hidden');
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, duration);
+        };
+
+        BoardGame.prepareChallenge = (type, level, playerToChallenge) => {
+            let pool;
+            const difficulty = BoardGame.difficulty || 'medium';
+            if (level === 'couple') { pool = CHALLENGES.couple; }
+            else {
+                // Ajustar nivel según dificultad: easy evita nivel 3, hard evita nivel 1
+                let lvl = String(level);
+                if (difficulty === 'easy' && lvl === '3') lvl = '2';
+                if (difficulty === 'hard' && lvl === '1') lvl = '2';
+                pool = CHALLENGES[lvl] || [];
+                const isQuestion = type === 'pregunta';
+                pool = pool.filter(q => {
+                    if (typeof q === 'string') return (q.includes('?') === isQuestion);
+                    if (typeof q === 'object' && q !== null) {
+                        if (q.type === 'pregunta') return isQuestion;
+                        if (q.type === 'reto') return !isQuestion;
+                        return true;
+                    }
+                    return true;
+                });
+            }
+
+            const settings = BoardGame.gameSettings || {};
+
+            // Determinar si debemos forzar una pregunta sensible cada N turnos (configurable desde settings)
+            const everyN = (BoardGame.gameSettings && Number.isFinite(Number(BoardGame.gameSettings.forceSanacionEvery))) ? Number(BoardGame.gameSettings.forceSanacionEvery) : 3;
+            const shouldForce = everyN > 0;
+            const forceSanacion = shouldForce && (type === 'pregunta') && (String(level) !== '3') && (((BoardGame.turnCounter + 1) % everyN) === 0);
+
+            // Si hideSensitive está activo y **no** es un turno forzado, filtrar preguntas sensibles
+            if (settings.hideSensitive && !forceSanacion) {
+                const nonSensitivePool = pool.filter(q => !(typeof q === 'object' && q !== null && q.tag === 'sanacion'));
+                if (nonSensitivePool.length > 0) {
+                    pool = nonSensitivePool;
+                } else {
+                    // No hay preguntas no sensibles en este nivel: omitir la carta y avanzar turno
+                    if (settings.showToast && BoardGame.showToast) BoardGame.showToast('Carta sensible omitida según configuración.');
+                    BoardGame.currentChallenge = null;
+                    document.getElementById('diceRollContainer').classList.remove('hidden');
+                    document.getElementById('revealCardContainer').classList.add('hidden');
+                    BoardGame.turnCounter++;
+                    setTimeout(() => BoardGame.nextTurn(), 150);
+                    return;
+                }
+            }
+
+            // Si debemos forzar una pregunta sensible, buscar una en el pool (si existe)
+            let randomItem = null;
+            if (forceSanacion) {
+                const sanacionItem = pool.find(q => typeof q === 'object' && q !== null && q.tag === 'sanacion');
+                if (sanacionItem) {
+                    randomItem = sanacionItem;
+                    // Mostrar indicador visual breve
+                    if (BoardGame.showToast && BoardGame.gameSettings && BoardGame.gameSettings.showToast) {
+                        BoardGame.showToast('Se fuerza una pregunta de sanación (según configuración)');
+                    }
+                    // crear indicador en pantalla central por 1.6s
+                    const indicatorId = 'forceSanacionIndicator';
+                    let ind = document.getElementById(indicatorId);
+                    if (!ind) {
+                        ind = document.createElement('div');
+                        ind.id = indicatorId;
+                        ind.style.position = 'fixed';
+                        ind.style.left = '50%';
+                        ind.style.top = '12%';
+                        ind.style.transform = 'translateX(-50%)';
+                        ind.style.zIndex = '70';
+                        ind.style.padding = '8px 12px';
+                        ind.style.background = 'linear-gradient(90deg,#fce7f3,#ede9fe)';
+                        ind.style.borderRadius = '999px';
+                        ind.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+                        ind.style.color = '#6b21a8';
+                        ind.style.fontWeight = '700';
+                        ind.textContent = 'Pregunta sensible forzada';
+                        document.body.appendChild(ind);
+                        setTimeout(() => { if (ind && ind.parentNode) ind.parentNode.removeChild(ind); }, 1600);
+                    }
+                }
+            }
+
+            // Si no se forzó o no se encontró, seleccionar aleatoriamente
+            if (!randomItem) randomItem = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
+            // soportar strings y objetos {text, tag}
+            const challengeText = (() => {
+                if (!randomItem) return '¡Error!';
+                if (typeof randomItem === 'string') return randomItem;
+                if (typeof randomItem === 'object' && randomItem.text) return randomItem.text;
+                return String(randomItem);
+            })();
+            const challengeTag = (typeof randomItem === 'object' && randomItem.tag) ? randomItem.tag : null;
             BoardGame.currentChallenge = {
                 type: type,
                 level: level === 'couple' ? 'Pareja' : (level === '1' ? 'Fácil' : level === '2' ? 'Medio' : 'Intenso'),
                 text: challengeText,
+                tag: challengeTag,
                 resolver: playerToChallenge
             };
 
@@ -610,31 +869,116 @@
 
         BoardGame.showChallengeModal = () => {
             if (!BoardGame.currentChallenge) { BoardGame.turnCounter++; BoardGame.nextTurn(); return; }
-            const p = BoardGame.currentChallenge.resolver; 
-            
+            const p = BoardGame.currentChallenge.resolver;
+
             document.getElementById('diceRollContainer').classList.add('hidden');
             document.getElementById('revealCardContainer').classList.add('hidden');
 
             const isCoupleReto = BoardGame.currentChallenge.level === 'Pareja';
-            
-            document.getElementById('modalTitle').textContent = isCoupleReto ? 
-                '¡RETO EN PAREJA! 💋' : 
-                (BoardGame.currentChallenge.type === 'pregunta' ? 'Pregunta Íntima 💬' : 'Reto Íntimo 🔥');
-            
-            document.getElementById('modalType').textContent = isCoupleReto ? 
-                `¡Ambos Participan!` : 
-                `Nivel: ${BoardGame.currentChallenge.level.toUpperCase()} - Para: ${p.name}`;
-            
-            document.getElementById('modalContent').textContent = BoardGame.currentChallenge.text;
 
-            document.getElementById('successChallengeBtn').onclick = BoardGame.successChallenge; 
-            document.getElementById('successChallengeBtn').textContent = isCoupleReto ? '¡Reto en Pareja Cumplido!' : '¡Reto Cumplido!';
-            
-            document.getElementById('successChallengeBtn').style.backgroundColor = p.color;
-            document.getElementById('successChallengeBtn').onmouseover = function() { this.style.backgroundColor = getHoverColor(p.color); }; 
-            document.getElementById('successChallengeBtn').onmouseout = function() { this.style.backgroundColor = p.color; };
-            
+            document.getElementById('modalTitle').textContent = isCoupleReto ?
+                '¡RETO EN PAREJA! 💋' :
+                (BoardGame.currentChallenge.type === 'pregunta' ? 'Pregunta Íntima 💬' : 'Reto Íntimo 🔥');
+
+            document.getElementById('modalType').textContent = isCoupleReto ?
+                `¡Ambos Participan!` :
+                `Nivel: ${BoardGame.currentChallenge.level.toUpperCase()} - Para: ${p.name}`;
+
+            const isSanacion = BoardGame.currentChallenge.tag === 'sanacion';
+            if (isSanacion) {
+                document.getElementById('modalType').textContent += ' • (Pregunta sensible)';
+            }
+
+            // Helper para renderizar contenido y controles del modal
+            const renderModalControls = () => {
+                document.getElementById('modalContent').textContent = BoardGame.currentChallenge.text;
+
+                // Botón principal: cumplimiento
+                const successBtn = document.getElementById('successChallengeBtn');
+                successBtn.onclick = BoardGame.successChallenge;
+                successBtn.textContent = isCoupleReto ? '¡Reto en Pareja Cumplido!' : '¡Reto Cumplido!';
+                successBtn.style.backgroundColor = p.color;
+                successBtn.onmouseover = function() { this.style.backgroundColor = getHoverColor(p.color); };
+                successBtn.onmouseout = function() { this.style.backgroundColor = p.color; };
+
+                // Nota de apoyo para preguntas de sanación
+                let noteEl = document.getElementById('sanacionNote');
+                if (!noteEl) {
+                    noteEl = document.createElement('div');
+                    noteEl.id = 'sanacionNote';
+                    noteEl.className = 'sanacion-note';
+                    noteEl.textContent = 'Esta pregunta puede tocar temas sensibles. Está bien pasarla o tomar un momento para procesarla.';
+                    const modalContent = document.querySelector('#challengeModal .modal-content');
+                    modalContent.insertBefore(noteEl, modalContent.querySelector('.flex'));
+                }
+                noteEl.style.display = isSanacion ? 'block' : 'none';
+
+                // Añadir botón de 'Pasar' solo para preguntas de sanación
+                let skipBtn = document.getElementById('skipChallengeBtn');
+                if (!skipBtn) {
+                    skipBtn = document.createElement('button');
+                    skipBtn.id = 'skipChallengeBtn';
+                    skipBtn.className = 'w-3/4 mt-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 rounded-full transition duration-200 shadow-md skip-pulse';
+                    skipBtn.textContent = 'Pasar sin penalización';
+                    skipBtn.onclick = BoardGame.skipChallenge;
+                    document.querySelector('#challengeModal .modal-content .flex').appendChild(skipBtn);
+                }
+                skipBtn.style.display = isSanacion ? 'block' : 'none';
+            };
+
+            const settings = BoardGame.gameSettings || {};
+            // Si hay respiración previa, mostrar overlay y después renderizar controles + modal
+            if (isSanacion && settings.breathingBeforeSensitive) {
+                let breathOverlay = document.getElementById('breathOverlay');
+                if (!breathOverlay) {
+                    breathOverlay = document.createElement('div');
+                    breathOverlay.id = 'breathOverlay';
+                    breathOverlay.style.position = 'fixed';
+                    breathOverlay.style.inset = '0';
+                    breathOverlay.style.display = 'flex';
+                    breathOverlay.style.alignItems = 'center';
+                    breathOverlay.style.justifyContent = 'center';
+                    breathOverlay.style.background = 'rgba(0,0,0,0.6)';
+                    breathOverlay.style.zIndex = '60';
+                    breathOverlay.innerHTML = `<div style="background:linear-gradient(90deg,#fff,#f3e8ff);padding:24px;border-radius:12px;text-align:center;max-width:380px;">
+                        <h3 style="color:#6b21a8;font-weight:700;margin-bottom:8px">Tomemos una respiración</h3>
+                        <p style="color:#4b5563;margin-bottom:12px">Inhalen profundamente por la nariz... y exhalen lentamente por la boca.</p>
+                        <div id="breathCounter" style="font-size:22px;font-weight:700;color:#a855f7">3</div>
+                    </div>`;
+                    document.body.appendChild(breathOverlay);
+                }
+                let count = 3;
+                const counterEl = document.getElementById('breathCounter');
+                breathOverlay.style.display = 'flex';
+                const interval = setInterval(() => {
+                    count--;
+                    if (counterEl) counterEl.textContent = String(count);
+                    if (count <= 0) {
+                        clearInterval(interval);
+                        breathOverlay.style.display = 'none';
+                        if (breathOverlay && breathOverlay.parentNode) breathOverlay.parentNode.removeChild(breathOverlay);
+                        // Renderizar controles y mostrar modal
+                        renderModalControls();
+                        challengeModal.classList.remove('hidden');
+                    }
+                }, 800);
+                return;
+            }
+
+            // Si no hay respiración previa, renderizar y mostrar inmediatamente
+            renderModalControls();
             challengeModal.classList.remove('hidden');
+        };
+
+        BoardGame.skipChallenge = () => {
+            // Cierra el modal y avanza el turno sin marcar como cumplido
+            const modal = document.getElementById('challengeModal');
+            modal.classList.add('hidden');
+            BoardGame.currentChallenge = null;
+            setTimeout(() => {
+                BoardGame.turnCounter++;
+                BoardGame.nextTurn();
+            }, 200);
         };
 
         BoardGame.successChallenge = () => {
@@ -711,23 +1055,130 @@
                 containerElement.appendChild(swatch);
             });
             const defaultColor = playerId === 0 ? BOARD_COLOR_PALETTE[0] : BOARD_COLOR_PALETTE[2];
-            containerElement.querySelector(`[data-color="${defaultColor}"]`).click();
+            const defaultEl = containerElement.querySelector(`[data-color="${defaultColor}"]`);
+            if (defaultEl) defaultEl.click();
+            else if (containerElement.firstChild) containerElement.firstChild.click();
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-            const config = localStorage.getItem('boardGameConfig');
-            if (config) {
-                const data = JSON.parse(config);
-                // Usar preguntas de index.html
-                CHALLENGES = data.CHALLENGES;
-                // Ocultar pantalla de inicio y inicializar tablero directamente
-                document.getElementById('start-screen').classList.add('hidden');
-                BoardGame.initializeBoardGame(
-                    { name: data.player1Name, color: data.player1SelectedColor, prize: data.player1Prize, globalScore: data.player1GlobalScore, id: 0 },
-                    { name: data.player2Name, color: data.player2SelectedColor, prize: data.player2Prize, globalScore: data.player2GlobalScore, id: 1 }
-                );
-                document.getElementById('board-game-screen').classList.remove('hidden');
-            } else {
+            const raw = localStorage.getItem('boardGameConfig');
+            if (raw) {
+                let data = null;
+                try {
+                    data = JSON.parse(raw);
+                } catch (e) {
+                    console.error('boardGameConfig corrupto:', e);
+                    localStorage.removeItem('boardGameConfig');
+                }
+                if (data) {
+                    // Usar preguntas de index.html si vienen
+                    if (data.CHALLENGES) CHALLENGES = data.CHALLENGES;
+                    if (data.difficulty) BoardGame.difficulty = data.difficulty;
+
+                    // Aplicar gameSettings con valores por defecto
+                    BoardGame.gameSettings = Object.assign({
+                        bonusMode: 'mix',
+                        allowDifficultyChange: true,
+                        persistBoardState: true,
+                        showToast: true
+                    }, data.gameSettings || {});
+
+                    // Si persistencia está activada y existe estado guardado, restaurar
+                    if (BoardGame.gameSettings.persistBoardState) {
+                        const savedStateRaw = localStorage.getItem('boardGameState');
+                        if (savedStateRaw) {
+                            try {
+                                const saved = JSON.parse(savedStateRaw);
+                                // Restaurar posiciones mínimas si son válidas
+                                if (saved.players && Array.isArray(saved.players)) {
+                                    // Inicializar tablero ocultando start
+                                    document.getElementById('start-screen').classList.add('hidden');
+                                    BoardGame.initializeBoardGame(
+                                        saved.players[0], saved.players[1]
+                                    );
+                                    document.getElementById('board-game-screen').classList.remove('hidden');
+                                    try { showTopNav(); } catch(e) {}
+                                    // Aplicar turnCounter y lapCount si existen
+                                    BoardGame.turnCounter = saved.turnCounter || 0;
+                                    BoardGame.lapCount = saved.lapCount || [0,0];
+                                    BoardGame.updateGameStatus();
+                                    return;
+                                }
+                            } catch (e) { console.warn('No se pudo restaurar el estado guardado:', e); }
+                        }
+                    }
+
+                    // Ocultar pantalla de inicio y inicializar tablero directamente
+                    document.getElementById('start-screen').classList.add('hidden');
+                    BoardGame.initializeBoardGame(
+                        { name: data.player1Name, color: data.player1SelectedColor, prize: data.player1Prize, globalScore: data.player1GlobalScore, id: 0 },
+                        { name: data.player2Name, color: data.player2SelectedColor, prize: data.player2Prize, globalScore: data.player2GlobalScore, id: 1 }
+                    );
+
+                    // Añadir control de cambio de dificultad si está permitido
+                    if (BoardGame.gameSettings.allowDifficultyChange) {
+                        const diffCtrl = document.createElement('div');
+                        diffCtrl.style.position = 'absolute';
+                        diffCtrl.style.top = '4px';
+                        diffCtrl.style.left = '4px';
+                        diffCtrl.innerHTML = `<select id="board-difficulty-select" class="rounded-md p-2">
+                            <option value="easy">Fácil</option>
+                            <option value="medium">Medio</option>
+                            <option value="hard">Intenso</option>
+                        </select>`;
+                        document.body.appendChild(diffCtrl);
+                        const sel = document.getElementById('board-difficulty-select');
+                        sel.value = BoardGame.difficulty || 'medium';
+                        sel.onchange = () => {
+                            BoardGame.difficulty = sel.value;
+                            try {
+                                const cfg = JSON.parse(localStorage.getItem('boardGameConfig') || '{}');
+                                cfg.difficulty = sel.value;
+                                localStorage.setItem('boardGameConfig', JSON.stringify(cfg));
+                            } catch (e) { console.warn('No se pudo actualizar dificultad en boardGameConfig', e); }
+                            if (BoardGame.gameSettings.showToast && BoardGame.showToast) BoardGame.showToast('Dificultad cambiada a ' + sel.value);
+                            BoardGame.updateGameStatus();
+                        };
+                    }
+
+                    document.getElementById('board-game-screen').classList.remove('hidden');
+                    try { showTopNav(); } catch(e) {}
+                    // Mostrar un mensaje especial para Patty al cargar, pero nunca mostrar la dedicatoria personalizada aquí (la reservamos para el Easter Egg)
+                    (function showInitialPattyMessage(){
+                        try {
+                            const cfg = data || {};
+                            // Comprobar que Patty esté entre los nombres
+                            const namesConcat = ((cfg.player1Name||'') + ' ' + (cfg.player2Name||'')).toLowerCase();
+                            if (!namesConcat.includes('patty')) return;
+
+                            // Si existe una dedicatoria personalizada, NO mostrarla ahora. En su lugar, elegir un mensaje aleatorio del pool excluyendo la dedicatoria.
+                            let initialMsg = '';
+                            const dedication = cfg.pattyDedication && cfg.pattyDedication.trim() ? cfg.pattyDedication.trim() : null;
+                            const pool = Array.isArray(cfg.pattyPool) ? cfg.pattyPool.slice() : [];
+
+                            if (pool.length > 0) {
+                                const candidates = dedication ? pool.filter(m => m.trim() !== dedication) : pool;
+                                initialMsg = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : pool[Math.floor(Math.random() * pool.length)];
+                            } else if (cfg.pattyMessage) {
+                                // Fallback: use pattyMessage only if no pool available and pattyMessage isn't the dedication
+                                if (!dedication || (cfg.pattyMessage && cfg.pattyMessage.trim() !== dedication)) initialMsg = cfg.pattyMessage;
+                            }
+
+                            if (initialMsg) {
+                                document.getElementById('modalTitle').textContent = 'Un mensaje para Patty 💌';
+                                document.getElementById('modalType').textContent = '';
+                                document.getElementById('modalContent').textContent = initialMsg;
+                                const btn = document.getElementById('successChallengeBtn');
+                                btn.textContent = 'Gracias';
+                                btn.onclick = () => { document.getElementById('challengeModal').classList.add('hidden'); };
+                                document.getElementById('challengeModal').classList.remove('hidden');
+                            }
+                        } catch (e) { console.warn('No se pudo mostrar pattyMessage inicial:', e); }
+                    })();
+                    return;
+                }
+            }
+            else {
                 // Mostrar pantalla de inicio normal
                 createColorSelector(document.getElementById('player1ColorSelector'), 0);
                 createColorSelector(document.getElementById('player2ColorSelector'), 1);
@@ -741,7 +1192,271 @@
         });
 
         // Exponer BoardGame al scope global
+        BoardGame.testSanacion = () => {
+            // Buscar primera pregunta taggeada como 'sanacion' en CHALLENGES
+            let found = null;
+            for (const key of Object.keys(CHALLENGES)) {
+                const list = CHALLENGES[key];
+                if (!Array.isArray(list)) continue;
+                for (const item of list) {
+                    if (typeof item === 'object' && item !== null && item.tag === 'sanacion') { found = item; break; }
+                }
+                if (found) break;
+            }
+            if (!found) {
+                alert('No se encontró ninguna pregunta marcada como sanación en CHALLENGES.');
+                return;
+            }
+            // Forzar currentChallenge y mostrar modal (evita filtros)
+            BoardGame.currentChallenge = { type: 'pregunta', level: 'Medio', text: found.text, tag: found.tag, resolver: BoardGame.players && BoardGame.players[0] ? BoardGame.players[0] : { name: 'Jugador', color: '#EC4899' } };
+            BoardGame.showChallengeModal();
+        };
         window.BoardGame = BoardGame;
+
+        // ===== Navegación y Atajos de Teclado =====
+        BoardGame.showHelpModal = () => {
+            const m = document.getElementById('helpModal'); if (m) m.classList.remove('hidden');
+        };
+        BoardGame.hideHelpModal = () => {
+            const m = document.getElementById('helpModal'); if (m) m.classList.add('hidden');
+        };
+
+        // Cerrar modales con Escape y manejar atajos globales
+        document.addEventListener('keydown', (e) => {
+            const activeElement = document.activeElement;
+            // Evitar interceptar cuando focus está en un input
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) return;
+
+            if (e.key === 'Escape') {
+                // Cerrar cualquier modal visible
+                const modals = ['challengeModal','helpModal','breathOverlay'];
+                modals.forEach(id => { const el = document.getElementById(id); if (el && !el.classList.contains('hidden')) el.classList.add('hidden'); });
+                // Si había un scar (breathOverlay) que se creó dinámicamente, remove it safely
+                const br = document.getElementById('breathOverlay'); if (br && br.parentNode) br.parentNode.removeChild(br);
+            }
+
+            // Espacio: lanzar dado del jugador actual
+            if (e.code === 'Space') {
+                e.preventDefault();
+                const current = BoardGame.getCurrentPlayerIndex();
+                try { BoardGame.rollDice(current); } catch (err) { /* ignore */ }
+            }
+
+            // R: revelar carta / mostrar modal (cuando esté disponible)
+            if (e.key.toLowerCase() === 'r') {
+                try { BoardGame.showChallengeModal(); } catch (err) { /* ignore */ }
+            }
+
+            // S: saltar pregunta sensible si el botón está visible
+            if (e.key.toLowerCase() === 's') {
+                const skip = document.getElementById('skipChallengeBtn'); if (skip && skip.offsetParent !== null) { skip.click(); }
+            }
+
+            // Enter: aceptar en modal (btn cumplimiento)
+            if (e.key === 'Enter') {
+                const success = document.getElementById('successChallengeBtn');
+                if (success && success.offsetParent !== null) { success.click(); }
+            }
+        });
+
+        // ===== Easter Egg: Patty Heart (7 clicks) =====
+        // Confetti launcher
+        function launchConfetti(x, y, count = 18) {
+            const colors = ['#ef4444','#f97316','#f59e0b','#f472b6','#06b6d4','#60a5fa','#a78bfa'];
+            const container = document.body;
+            const pieces = [];
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'confetti-piece';
+                p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                p.style.left = (x - 6) + 'px';
+                p.style.top = (y - 6) + 'px';
+                p.style.opacity = '1';
+                p.style.transform = `translateY(0) rotate(${Math.random()*360}deg)`;
+                container.appendChild(p);
+                pieces.push(p);
+
+                // animate via JS / forced layout
+                (function animatePiece(el){
+                    const dx = (Math.random() - 0.5) * 160;
+                    const dy = - (Math.random() * 220 + 60);
+                    const rot = (Math.random() - 0.5) * 720;
+                    requestAnimationFrame(() => {
+                        el.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(${0.9 + Math.random()*0.8})`;
+                        el.style.opacity = '0';
+                    });
+                    setTimeout(() => { if (el && el.parentNode) el.parentNode.removeChild(el); }, 1100 + Math.random()*300);
+                })(p);
+            }
+        }
+
+        (function setupPattyHeart(){
+            const heart = document.getElementById('pattyHeart');
+            if (!heart) return;
+            let clickCount = 0;
+            const required = 7;
+
+            const resetPulse = () => heart.classList.remove('pulse');
+
+            heart.addEventListener('click', (e) => {
+                e.stopPropagation();
+                clickCount++;
+                heart.classList.add('pulse');
+                setTimeout(resetPulse, 900);
+
+                // breve animación y contador visual (title)
+                heart.title = `Amor: ${clickCount}/${required}`;
+
+                // comprobar si Patty está jugando (nombre contiene 'patty')
+                const isPattyPlaying = BoardGame.players && BoardGame.players.some(p => p.name && p.name.toLowerCase().includes('patty'));
+                if (!isPattyPlaying) return; // solo procede si Patty está en la partida
+
+                if (clickCount >= required) {
+                    clickCount = 0;
+                    // Mostrar mensaje bonito para Patty: preferir boardGameConfig.pattyMessage / pattyDedication
+                    let cfg = null;
+                    try { cfg = JSON.parse(localStorage.getItem('boardGameConfig') || '{}'); } catch (err) { cfg = {}; }
+                    // lanzar confetti cerca del corazón
+                    try {
+                        const rect = heart.getBoundingClientRect();
+                        launchConfetti(rect.left + rect.width/2, rect.top + rect.height/2, 20);
+                    } catch (e) { /* ignore confetti errors */ }
+
+                    // Determinar mensaje final: si hay pattyMessage (dedicatoria fija) usarla, si no, escoger de pattyPool evitando repeticiones
+                    let finalMsg = (cfg && cfg.pattyMessage) ? cfg.pattyMessage : '';
+                    if (!finalMsg || finalMsg.trim().length === 0) {
+                        const pool = Array.isArray(cfg && cfg.pattyPool) ? cfg.pattyPool.slice() : [];
+                        if (pool.length > 0) {
+                            const usedKey = 'pattyUsedMessages';
+                            let used = [];
+                            try { used = JSON.parse(sessionStorage.getItem(usedKey) || '[]'); } catch (e) { used = []; }
+                            const candidates = pool.filter(m => !used.includes(m));
+                            let pick = null;
+                            if (candidates.length > 0) pick = candidates[Math.floor(Math.random() * candidates.length)];
+                            else pick = pool[Math.floor(Math.random() * pool.length)];
+                            finalMsg = pick;
+                            try { used.push(pick); sessionStorage.setItem(usedKey, JSON.stringify(used)); } catch (e) { /* ignore */ }
+                        } else {
+                            finalMsg = 'Patty: tu presencia ilumina todo. Gracias por ser tú.';
+                        }
+                    }
+
+                    // Usar el modal existente para mostrar el mensaje
+                    try {
+                        const modal = document.getElementById('challengeModal');
+                        document.getElementById('modalTitle').textContent = 'Un tributo para Patty 💖';
+                        document.getElementById('modalType').textContent = '';
+                        document.getElementById('modalContent').textContent = finalMsg;
+                        const btn = document.getElementById('successChallengeBtn');
+                        btn.textContent = 'Cerrar';
+                        btn.onclick = () => { document.getElementById('challengeModal').classList.add('hidden'); };
+                        modal.classList.remove('hidden');
+                    } catch (e) { console.warn('No se pudo mostrar mensaje de Patty:', e); }
+                }
+            });
+        })();
+
+        // ==========================
+        // Import / Export Board Config
+        // ==========================
+        function exportBoardConfig() {
+            try {
+                const cfg = JSON.parse(localStorage.getItem('boardGameConfig') || '{}');
+                const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'boardGameConfig.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            } catch (e) { BoardGame.showToast && BoardGame.showToast('No hay configuración para exportar'); }
+        }
+
+        function triggerBoardImport() {
+            const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json'; inp.onchange = (ev) => { const f = ev.target.files[0]; if (f) importBoardConfigFromFile(f); }; document.body.appendChild(inp); inp.click(); inp.remove();
+        }
+
+        function importBoardConfigFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    localStorage.setItem('boardGameConfig', JSON.stringify(parsed));
+                    BoardGame.showToast && BoardGame.showToast('Configuración importada. Recarga para aplicar.');
+                } catch (err) { BoardGame.showToast && BoardGame.showToast('JSON inválido'); }
+            };
+            reader.readAsText(file);
+        }
+
+        // ==========================
+        // WebRTC P2P (señalización manual)
+        // ==========================
+        let _pc = null; let _dc = null;
+        function setP2PStatus(text, colorClass = 'bg-yellow-100 text-yellow-800'){
+            const el = document.getElementById('p2pStatus'); if (!el) return;
+            el.textContent = text;
+            el.className = 'text-xs px-2 py-1 rounded-full ' + colorClass;
+        }
+
+        function openP2PModal() { 
+            const m = document.getElementById('p2pModal'); const card = document.getElementById('p2pCard'); if (!m || !card) return; 
+            m.classList.remove('hidden'); 
+            try { document.body.style.overflow = 'hidden'; } catch(e){}
+            // animation: scale+fade in
+            setTimeout(() => { card.classList.remove('scale-95','opacity-0'); card.classList.add('scale-100','opacity-100'); }, 20);
+            // autofocus
+            setTimeout(() => { try { const t = document.getElementById('localSignal'); if (t) { t.focus(); t.select(); } } catch(e){} }, 200);
+            setP2PStatus('Listo', 'bg-yellow-100 text-yellow-800');
+        }
+        function closeP2PModal() { 
+            const m = document.getElementById('p2pModal'); const card = document.getElementById('p2pCard'); if (!m || !card) return; 
+            // animate out
+            card.classList.add('scale-95','opacity-0');
+            setTimeout(() => { m.classList.add('hidden'); try { document.body.style.overflow = ''; } catch(e){} }, 180);
+        }
+
+        function copyLocalSignal(){ try { const t = document.getElementById('localSignal'); if (t && navigator.clipboard) { navigator.clipboard.writeText(t.value); BoardGame.showToast && BoardGame.showToast('Señal copiada'); } } catch(e){ BoardGame.showToast && BoardGame.showToast('No se pudo copiar'); } }
+
+        async function createOffer() {
+            try {
+                _pc = new RTCPeerConnection();
+                _dc = _pc.createDataChannel('game');
+                _dc.onopen = () => { setP2PStatus('Conectado', 'bg-emerald-100 text-emerald-800'); BoardGame.showToast && BoardGame.showToast('DataChannel abierto'); };
+                _dc.onclose = () => { setP2PStatus('Cerrado', 'bg-red-100 text-red-800'); };
+                _dc.onmessage = (ev) => {
+                    try { const data = JSON.parse(ev.data); console.log('P2P msg', data); if (data.type === 'syncState') { BoardGame.showToast && BoardGame.showToast('Estado remoto recibido'); } } catch(e){ }
+                };
+                _pc.onicecandidate = (ev) => { if (ev.candidate) return; document.getElementById('localSignal').value = JSON.stringify({ sdp: _pc.localDescription }); };
+                _pc.onconnectionstatechange = () => { try { if (_pc.connectionState === 'connected') setP2PStatus('Conectado', 'bg-emerald-100 text-emerald-800'); else if (_pc.connectionState === 'disconnected' || _pc.connectionState === 'failed') setP2PStatus('Desconectado', 'bg-red-100 text-red-800'); } catch(e){} };
+                const offer = await _pc.createOffer();
+                await _pc.setLocalDescription(offer);
+                document.getElementById('localSignal').value = JSON.stringify({ sdp: _pc.localDescription });
+            } catch (e) { console.warn('No se pudo crear oferta', e); BoardGame.showToast && BoardGame.showToast('Error creando oferta'); }
+        }
+
+        async function acceptRemoteSignal() {
+            try {
+                const remoteRaw = document.getElementById('remoteSignal').value.trim(); if (!remoteRaw) return alert('Pega la señal remota.');
+                const parsed = JSON.parse(remoteRaw);
+                // Si trae sdp.type === 'offer' -> responder
+                if (parsed && parsed.sdp && parsed.sdp.type === 'offer') {
+                    _pc = new RTCPeerConnection();
+                    _pc.ondatachannel = (ev) => { 
+                        _dc = ev.channel; 
+                        _dc.onmessage = (ev2) => console.log('P2P msg', ev2.data);
+                        _dc.onopen = () => { setP2PStatus('Conectado', 'bg-emerald-100 text-emerald-800'); BoardGame.showToast && BoardGame.showToast('DataChannel abierto'); };
+                        _dc.onclose = () => { setP2PStatus('Cerrado', 'bg-red-100 text-red-800'); };
+                    };
+                    _pc.onicecandidate = (ev) => { if (ev.candidate) return; document.getElementById('localSignal').value = JSON.stringify({ sdp: _pc.localDescription }); };
+                    _pc.onconnectionstatechange = () => { try { if (_pc.connectionState === 'connected') setP2PStatus('Conectado', 'bg-emerald-100 text-emerald-800'); else if (_pc.connectionState === 'disconnected' || _pc.connectionState === 'failed') setP2PStatus('Desconectado', 'bg-red-100 text-red-800'); } catch(e){} };
+                    await _pc.setRemoteDescription(parsed.sdp);
+                    const answer = await _pc.createAnswer(); await _pc.setLocalDescription(answer);
+                    document.getElementById('localSignal').value = JSON.stringify({ sdp: _pc.localDescription });
+                } else if (parsed && parsed.sdp && parsed.sdp.type === 'answer') {
+                    // completar el handshake
+                    if (!_pc) return alert('No hay PeerConnection local. Crea una oferta primero.');
+                    await _pc.setRemoteDescription(parsed.sdp);
+                    BoardGame.showToast && BoardGame.showToast('Conexión establecida');
+                    setP2PStatus('Conectado', 'bg-emerald-100 text-emerald-800');
+                }
+            } catch (e) { console.warn('Error acceptRemoteSignal', e); alert('Señal inválida'); }
+        }
     </script>
 </body>
 </html>
