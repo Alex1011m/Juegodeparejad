@@ -13,6 +13,8 @@
         }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Shared challenges data -->
+    <script src="challenges.js"></script>
     <style>
         /* Estilos base del App (Trivia) */
         body {
@@ -108,7 +110,25 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center p-4 transition-colors duration-500" style="--accent-color: #ec4899; --accent-color-rgb: 236, 72, 153;">
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center pt-16 p-4 transition-colors duration-500" style="--accent-color: #ec4899; --accent-color-rgb: 236, 72, 153;">
+    <!-- Barra de navegación superior unificada -->
+    <nav class="fixed top-0 left-0 right-0 h-16 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-b z-50">
+        <div class="max-w-5xl mx-auto h-full flex items-center justify-between px-4">
+            <div class="flex items-center gap-4">
+                <div class="text-2xl font-extrabold text-pink-600">💘 Juego Íntimo</div>
+                <button class="text-sm px-3 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showScreen('start-screen')">Inicio</button>
+                <button class="text-sm px-3 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showScreen('level-screen')">Modos</button>
+                <button class="text-sm px-3 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onclick="openQuestionsEditor()">Editor</button>
+            </div>
+            <div class="flex items-center gap-3">
+                <button class="text-sm px-3 py-1 rounded-md bg-emerald-500 text-white" onclick="exportConfig()">Exportar</button>
+                <button class="text-sm px-3 py-1 rounded-md bg-gray-200" onclick="triggerImportConfig()">Importar</button>
+                <button class="text-sm px-3 py-1 rounded-md bg-blue-500 text-white" onclick="showDifficultyModal()">Tablero</button>
+                <button class="text-sm px-3 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onclick="toggleSettingsModal()">Ajustes</button>
+                <button class="text-sm px-3 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showConsentModal()">Ayuda</button>
+            </div>
+        </div>
+    </nav>
     <div class="top-bar-container">
         <!-- BOTÓN DE REGRESO -->
         <div id="back-button-container" class="hidden">
@@ -136,6 +156,22 @@
         </div>
     </div>
     
+    <!-- Modal de Dificultad para Modo Tablero -->
+    <div id="difficulty-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Elige la dificultad para el Modo Tablero</h3>
+            <select id="difficulty-modal-select" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 mb-4">
+                <option value="easy">Fácil (suave)</option>
+                <option value="medium" selected>Medio (equilibrado)</option>
+                <option value="hard">Intenso (atrevido)</option>
+            </select>
+            <div class="flex gap-3">
+                <button onclick="closeDifficultyModal()" class="flex-1 py-3 rounded-xl bg-gray-200 dark:bg-gray-700">Cancelar</button>
+                <button onclick="confirmBoardMode()" class="flex-1 py-3 rounded-xl bg-pink-500 text-white">Confirmar y Abrir Tablero</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Contenedor Principal del Juego (Trivia App) -->
     <div id="game-container" class="w-full max-w-4xl bg-white dark:bg-gray-800 p-6 md:p-10 rounded-3xl shadow-2xl flex flex-col items-center text-center transition-all duration-500 transform scale-100 animate-pulse-slow">
         
@@ -152,8 +188,13 @@
                             <button onclick="generatePrizeIdea(1)" class="gemini-button text-xl">✨</button>
                     </div>
                 </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <input type="checkbox" id="player1-optout" />
+                    <label for="player1-optout" class="text-sm text-gray-700 dark:text-gray-300">Excluirme de preguntas sensibles</label>
+                </div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color de Ficha</label>
                 <div id="player1ColorSelector" class="color-selector-grid"></div>
+                <!-- (La selección de dificultad se pedirá solo si eligen Modo Tablero) -->
 
                 <input type="text" id="player2-name" placeholder="Nombre del Jugador 2" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-fuchsia-400 transition-all shadow-md" oninput="togglePrizeInput(2)">
                 <div id="player2-prize-container" class="prize-input-container">
@@ -162,6 +203,13 @@
                         <button onclick="generatePrizeIdea(2)" class="gemini-button text-xl">✨</button>
                     </div>
                 </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <input type="checkbox" id="player2-optout" />
+                    <label for="player2-optout" class="text-sm text-gray-700 dark:text-gray-300">Excluirme de preguntas sensibles</label>
+                </div>
+                <!-- Dedicatoria oculta para Patty (se reserva únicamente para el Easter Egg) -->
+                <!-- Campo oculto: la dedicatoria no se muestra en la pantalla principal pero se guarda si ya existe -->
+                <input type="hidden" id="patty-dedication" value="Te amo, es lo principal que puedo decir. Perdon si ves todos estos mensajes en el juego como algo cursi y que se puede sentir como una obsecion. Lo hago porque a veces mis palabras callan lo bonito que te quiero decir o simplemente se fuerza en estar cuidandote y se me olvida decir lo mas lindo que tengo que es profesar mi amor por ti. Te amo eres increible con todo en lo que te preocupas y todavia vienes con mas energia y sigues intentandolo amor. Te amo princesa vales mil" />
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color de Ficha</label>
                 <div id="player2ColorSelector" class="color-selector-grid"></div>
             </div>
@@ -211,7 +259,7 @@
                         <h3 class="text-2xl font-bold" id="level8-title">Modo Tablero 🎲</h3>
                         <p class="text-sm mt-2 font-normal" id="level8-desc">¡Juego de mesa! Tira el dado y cae en casillas de Pregunta, Reto o Pareja. Flujo atrevido garantizado.</p>
                     </div>
-                    <button onclick="selectLevel(8)" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-orange-600 dark:bg-amber-700 rounded-full shadow-lg hover:bg-orange-700 dark:hover:bg-amber-800 transition-all" id="level8-button">
+                    <button onclick="showDifficultyModal()" class="w-full mt-4 py-3 px-6 text-lg font-semibold text-white bg-orange-600 dark:bg-amber-700 rounded-full shadow-lg hover:bg-orange-700 dark:hover:bg-amber-800 transition-all" id="level8-button">
                         ¡A Mover Ficha!
                     </button>
                 </div>
@@ -252,10 +300,14 @@
         </div>
 
         <!-- Pantalla de creación de retos -->
-        <div id="create-game-screen" class="hidden space-y-6 w-full">
+    <div id="create-game-screen" class="hidden space-y-6 w-full">
             <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100" id="create-title">Crea tus propias preguntas y retos</h2>
             <div class="space-y-4">
                 <textarea id="custom-question-input" placeholder="Escribe tu pregunta o reto aquí..." class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-yellow-500 dark:focus:ring-lime-400 transition-all shadow-md min-h-[150px]"></textarea>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="custom-question-sensitive" />
+                    <label for="custom-question-sensitive" class="text-sm text-gray-700 dark:text-gray-300">Marcar como pregunta de sanación (sensible)</label>
+                </div>
                 <button onclick="addCustomQuestion()" class="w-full py-3 px-6 text-lg font-semibold text-white bg-yellow-500 dark:bg-lime-600 rounded-full shadow-lg hover:bg-yellow-600 dark:hover:bg-lime-700 transition-all transform hover:scale-105" id="add-question-button">
                     Agregar a mi juego ✨
                 </button>
@@ -356,7 +408,69 @@
                         </svg>
                     </div>
                 </div>
-                <button onclick="closeSettingsModal()" class="w-full py-3 px-6 mt-6 text-lg font-semibold text-white bg-pink-500 dark:bg-fuchsia-600 rounded-full shadow-lg hover:bg-pink-600 dark:hover:bg-fuchsia-700 transition-all transform hover:scale-105" id="close-settings-button">Cerrar</button>
+                <hr class="my-4 border-gray-200 dark:border-gray-700">
+                <h4 class="text-md font-semibold text-gray-800 dark:text-gray-100 mb-2">Opciones del Tablero</h4>
+                <div class="text-left mb-3">
+                    <label class="block text-sm text-gray-700 dark:text-gray-300 mb-1">Comportamiento casilla BONO</label>
+                    <select id="settings-bonus-mode" class="w-full px-3 py-2 rounded-md border dark:bg-gray-700 dark:text-gray-100">
+                        <option value="mix">Mezcla (movimiento o carta)</option>
+                        <option value="move">Solo movimiento extra</option>
+                        <option value="card">Solo carta (pregunta/reto)</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2 mb-2">
+                    <input type="checkbox" id="settings-allow-difficulty-change" checked />
+                    <label for="settings-allow-difficulty-change" class="text-sm text-gray-700 dark:text-gray-300">Permitir cambiar dificultad desde el Tablero</label>
+                </div>
+                <div class="flex items-center gap-2 mb-2">
+                    <input type="checkbox" id="settings-persist-board-state" checked />
+                    <label for="settings-persist-board-state" class="text-sm text-gray-700 dark:text-gray-300">Persistir estado del tablero (recuperable)</label>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                    <input type="checkbox" id="settings-show-toast" checked />
+                    <label for="settings-show-toast" class="text-sm text-gray-700 dark:text-gray-300">Mostrar notificaciones (toast)</label>
+                </div>
+
+                <div class="flex items-center gap-2 mb-2">
+                    <input type="checkbox" id="settings-hide-sensitive" />
+                    <label for="settings-hide-sensitive" class="text-sm text-gray-700 dark:text-gray-300">Ocultar automáticamente preguntas sensibles (sanación)</label>
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                    <input type="checkbox" id="settings-breathing-before-sensitive" />
+                    <label for="settings-breathing-before-sensitive" class="text-sm text-gray-700 dark:text-gray-300">Mostrar breve respiración antes de preguntas sensibles</label>
+                </div>
+                <div class="text-left mb-4">
+                    <label for="settings-force-sanacion" class="block text-sm text-gray-700 dark:text-gray-300 mb-1">Forzar pregunta sensible cada N turnos (0 = desactivar)</label>
+                    <input id="settings-force-sanacion" type="number" min="0" step="1" value="3" class="w-full px-3 py-2 rounded-md border dark:bg-gray-700 dark:text-gray-100" />
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                    <input type="checkbox" id="settings-debug" />
+                    <label for="settings-debug" class="text-sm text-gray-700 dark:text-gray-300">Debug: ver logs en consola</label>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="closeSettingsModal()" class="flex-1 py-3 rounded-xl bg-gray-200 dark:bg-gray-700">Cancelar</button>
+                    <button onclick="applySettingsAndClose()" class="flex-1 py-3 rounded-xl bg-pink-500 text-white">Guardar opciones</button>
+                </div>
+            </div>
+        </div>
+        <!-- Editor de preguntas (CRUD) -->
+        <div id="questions-editor-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl max-w-2xl w-full text-left" onclick="event.stopPropagation()">
+                <h3 class="text-xl font-bold mb-2">Editor de Preguntas y Retos</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Aquí puedes agregar, editar o eliminar preguntas personalizadas (se guardan en localStorage).</p>
+                <div class="mb-3">
+                    <textarea id="editor-new-text" placeholder="Escribe la pregunta o reto aquí..." class="w-full p-3 rounded-md dark:bg-gray-700 dark:text-gray-100"></textarea>
+                    <div class="flex items-center gap-2 mt-2">
+                        <label class="text-sm"><input type="checkbox" id="editor-new-sensitive"> Marcar como sanación (sensible)</label>
+                        <button onclick="addQuestionToEditor()" class="ml-auto px-3 py-2 bg-pink-500 text-white rounded-md">Agregar</button>
+                    </div>
+                </div>
+                <div id="editor-list" class="max-h-64 overflow-auto mb-4"></div>
+                <div class="flex justify-end gap-2">
+                    <button class="px-3 py-2 rounded-md bg-gray-200" onclick="closeQuestionsEditor()">Cerrar</button>
+                    <button class="px-3 py-2 rounded-md bg-emerald-500 text-white" onclick="saveQuestionsEditor()">Guardar y Aplicar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -424,6 +538,7 @@
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
         let player1Name, player2Name, player1Prize, player2Prize;
+    let difficulty = 'medium';
         let player1Score = 0;
         let player2Score = 0;
         let currentPlayer = 1; 
@@ -442,6 +557,8 @@
         const BOARD_COLOR_PALETTE = ['#EF4444', '#EC4899', '#A855F7', '#3B82F6', '#14B8A6', '#F97316', '#FACC15'];
         let player1SelectedColor = BOARD_COLOR_PALETTE[0]; 
         let player2SelectedColor = BOARD_COLOR_PALETTE[2]; 
+
+    // La dificultad se solicitará solo para el modo Tablero antes de redirigir
 
 
         // HARDCODED STRINGS (Spanish only)
@@ -509,25 +626,65 @@
             closeSettingsButton: "Cerrar",
         };
 
-        // CHALLENGES DATA (Compartido con el modo tablero)
-        const CHALLENGES = {
-            1: [
-                "¿Cuál es el recuerdo más gracioso que tienen juntos?", "Si pudieran viajar a cualquier lugar del mundo ahora mismo, ¿a dónde irían?", "Si tuvieras que describir su risa con una palabra, ¿cuál sería?", "¿Cuál es una canción que les recuerda el uno al otro?", "¿Qué superpoder elegirían tener juntos?", "Si pudieran pasar un día sin responsabilidades, ¿qué harían?", "¿Cuál es el mejor regalo que le has dado?", "¿Cuál es el mejor consejo que les han dado sobre el amor?", "¿Qué les hizo darse cuenta de que querían estar juntos?", "¿Qué es algo que has aprendido de tu pareja?", "¿Cuál es una meta que les gustaría lograr juntos en los próximos cinco años?", "¿Cuál es el hábito más adorable de tu pareja?", "¿Qué es algo que tu pareja hace que te hace sentir seguro/a?", "¿Cuál es un logro del que se sienten orgullosos como pareja?", "Si pudieran revivir un día de su relación, ¿cuál elegirían?", "¿Qué es lo que más extrañan hacer que hacían cuando empezaron a salir?", "¿Qué los hace sentir más conectados emocionalmente?", "¿Cuál es su broma interna favorita?", "¿Qué han aprendido el uno del otro sobre el amor?", "¿Qué es algo que te sorprende de tu pareja incluso hoy en día?", "¿Cuál es la forma más simple de hacerte feliz?", "¿Qué es algo que admiras profundamente de tu pareja?", "Dense un abrazo largo y cálido.", "Mírate a los ojos durante 30 segundos sin decir nada.", "Escribe algo bonito en la mano de tu pareja con tu dedo."
-            ],
-            2: [
-                "Describan el momento más romántico que han compartido.", "¿Qué tipo de caricias te gustan?", "Nombren una fantasía que les gustaría cumplir juntos.", "¿Cuál es su lugar favorito para besarse?", "Dale un masaje en los hombros a tu pareja durante un minuto.", "¿Cuál es la parte del cuerpo de tu pareja que más te atrae?", "Describan su cita ideal para un día lluvioso.", "¿Qué los hace sentir más amados y deseados?", "Bésale en la parte del cuerpo que más te gusta.", "¿Qué los hace sentir más sensuales y confiados?", "Acaricia el cabello de tu pareja mientras le dices algo que te encanta de su personalidad.", "¿Cuál es su canción más sensual para bailar lento?", "Describan con tres palabras cómo se sienten cuando se besan.", "Nombren una fantasía no sexual que les gustaría vivir juntos.", "¿Qué es lo que más los excita en una cita romántica?", "Dense un beso que comience lento y se vuelva más apasionado.", "¿Cuál es el gesto más romántico que has hecho por tu pareja?", "Si tuvieran que elegir un sabor para su pasión, ¿cuál sería?", "Dale a tu pareja una caricia en la mano que se sienta como un beso.", "Besa la espalda de tu pareja mientras le susurras algo que te gustaría hacerle.", "Masajea los pies de tu pareja durante dos minutos mientras le hablas sobre lo que te atrae de ella.", "¿Cuál es tu fantasía de rol play menos sexual pero más sensual?", "Escribe un mensaje sensual en la espalda de tu pareja con tu dedo.", "Dale un beso largo y apasionado a tu pareja sin usar las manos.", "¿Cuál es la forma en que más te gusta que te toquen?", "Describan una fantasía que les gustaría cumplir si el tiempo y el lugar no fueran un problema."
-            ],
-            3: [
-                "Describe un lugar inesperado donde les gustaría tener una cita atrevida.", "¿Cuál ha sido la fantasía más loca que han tenido?", "Besa el cuello de tu pareja de forma muy sensual.", "¿Qué juguete sexual te gustaría usar en pareja?", "Describe una posición en la que quieras probar.", "Cuéntale una fantasía erótica que tengas con tu pareja y cómo te gustaría que fuera.", "Besa cada dedo de los pies de tu pareja.", "Besa cada parte del cuerpo de tu pareja que no le hayas besado antes.", "Háblale a tu pareja con la voz más sensual que tengas y descríbele algo que te excita de ella.", "Jueguen a 'verdad o reto' pero solo con preguntas y desafíos picantes.", "Dale un beso a tu pareja en el ombligo, subiendo y bajando.", "Dile a tu pareja qué es lo que más te gusta de sus gemidos.", "Besa a tu pareja desde el cuello hasta el pecho de forma lenta.", "Haz que tu pareja gima de placer sin tocarla.", "Bésense apasionadamente con las manos de ambos atadas.", "Dale a tu pareja una 'mordida de amor' en un lugar inesperado.", "Tápale los ojos a tu pareja y dale besos en diferentes partes del cuerpo para que adivine dónde está.", "Desafíale a tu pareja a un juego de cartas, pero con una apuesta picante.", "Describan qué es lo que les atrajo de su pareja en la primera cita.", "Si tuvieran que elegir a una pareja de cine para representarlos, ¿quiénes serían?", "¿Cuál es el recuerdo más íntimo que guardan de su relación?", "¿Qué los hace sentir más conectados con su pareja en un nivel profundo?", "Dale un masaje en la espalda a tu pareja mientras le susurras algo que te gusta de ella.", "¿Cuál es un logro del que te sientes orgulloso como pareja?", "Dale a tu pareja un masaje erótico con los ojos vendados.", "Susúrrale al oído a tu pareja algo que te gustaría hacer con ella en la cama.", "Describe la parte de tu cuerpo que más te gusta que te besen.", "Dale un beso en el abdomen a tu pareja y sube lentamente hasta sus labios.", "Bésale los dedos de las manos a tu pareja uno por uno, de forma lenta y sensual."
-            ],
-            couple: [
-                { type: 'reto', text: '¡Reto en Pareja! Dense un beso largo y apasionado, terminando con un susurro íntimo al oído.', level: 'Pareja' },
-                { type: 'reto', text: '¡Reto en Pareja! Ambos deben quitarse una prenda de vestir al mismo tiempo, sin usar las manos.', level: 'Pareja' },
-                { type: 'pregunta', text: '¡Pregunta en Pareja! Ambos deben nombrar su fantasía sexual MÁS PROHIBIDA y discutir cómo podrían acercarse a ella.', level: 'Pareja' },
-                { type: 'reto', text: '¡Reto en Pareja! Tomen 60 segundos para besarse mientras exploran una zona sensible de su pareja con una mano.', level: 'Pareja' },
-                { type: 'pregunta', text: '¡Pregunta en Pareja! ¿Cuál fue el momento exacto en que te sentiste más atraído/a sexualmente por mí?', level: 'Pareja' }
-            ]
-        };
+        // Mensajes especiales para Patty
+        const PATTY_MESSAGES = [
+            "Patty te amo, lamento que nosotros estemos con tantos problemas pero quiero que sepas que aunque el cansancio nos golpee no debemos rendirnos",
+            "Patty, gracias por seguir aquí conmigo; cada día a tu lado me recuerda por qué te elegí.",
+            "Patty, tu risa es mi refugio; te amo más de lo que las palabras pueden decir.",
+            "Patty, en las noches difíciles pienso en tu abrazo y encuentro paz; gracias por no rendirte.",
+            "Patty, quiero escucharte siempre; tu voz me calma y me guía.",
+            "Patty, perdóname por los errores y gracias por tu paciencia infinita.",
+            "Patty, cada paso contigo me enseña a ser mejor; te valoro y te amo.",
+            "Patty, cuando te miro recuerdo todas las razones por las que me enamoré de ti.",
+            "Patty, gracias por tu ternura incluso cuando estamos cansados; eres mi hogar.",
+            "Patty, prometo esforzarme por nosotros; tu felicidad es mi prioridad.",
+            "Patty, tus sueños también importan para mí; caminemos juntos hacia ellos.",
+            "Patty, gracias por aguantar mis días difíciles; te admiro y te quiero.",
+            "Patty, a tu lado aprendí a amar con más calma y más coraje.",
+            "Patty, tus abrazos curan lo que el día desgasta; no quiero perder eso.",
+            "Patty, valoro tu compañía y tu honestidad; eres mi compañera para todo.",
+            "Patty, gracias por cada detalle que haces; tu amor me sostiene.",
+            "Patty, quiero que hoy sepas que tu presencia cambia mi mundo para mejor.",
+            "Patty, en medio del caos, tu ternura me recuerda lo que importa: nosotros.",
+            "Patty, gracias por creer en nosotros; yo también quiero creer más cada día.",
+            "Patty, te abrazo con el corazón y con la esperanza de que lo nuestro siga creciendo.",
+            "Patty, cada amanecer a tu lado me da fuerzas para enfrentar lo que venga.",
+            "Patty, admiro tu ternura y tu coraje; gracias por ser mi compañera.",
+            "Patty, aunque discutamos, siempre encuentro en ti el amor que nos sostiene.",
+            "Patty, me inspiras a ser mejor y más paciente; gracias por tu luz.",
+            "Patty, contigo aprendí que el amor se muestra en los pequeños detalles.",
+            "Patty, tu mirada me calma; quiero cuidarte como tú me cuidas a mí.",
+            "Patty, perdona mis torpezas y toma mi mano: quiero reconstruirnos juntos.",
+            "Patty, tu voz es mi ancla en días revueltos; gracias por escucharme.",
+            "Patty, celebraré cada pequeño avance nuestro porque cada paso cuenta.",
+            "Patty, siento gratitud por tu paciencia; te quiero con todo mi corazón.",
+            "Patty, la complicidad que tenemos es un regalo; prometo valorarla siempre.",
+            "Patty, a tu lado las cosas malas parecen menos pesadas; gracias por existir.",
+            "Patty, nuestro cariño merece tiempo y ternura; yo estoy dispuesto a darlos.",
+            "Patty, cuando me abrazas me recuerdas que somos equipo; no quiero rendirme.",
+            "Patty, gracias por tus palabras de aliento incluso cuando dudamos; me fortaleces.",
+            "Patty, quiero que sepas que confío en nosotros y quiero volver a confiar cada día.",
+            "Patty, tus manos me sostienen y quiero sostenerte con la misma ternura.",
+            "Patty, prometo escuchar con más calma y responder con más amor.",
+            "Patty, recuerda que en lo imperfecto también hay belleza, sobre todo en nosotros.",
+            "Patty, cada gesto de tu amor es una semilla que quiero alimentar con respeto.",
+            "Patty, hoy te elijo de nuevo; hoy te abrazo en pensamiento y en palabra.",
+            "Patty, gracias por no rendirte conmigo; quiero construir paz a tu lado."
+        ];
+
+        // Obtener un mensaje aleatorio para Patty, opcionalmente excluyendo una dedicatoria
+        function getPattyMessage(exclude) {
+            if (!Array.isArray(PATTY_MESSAGES) || PATTY_MESSAGES.length === 0) return '';
+            const normalizedExclude = exclude && typeof exclude === 'string' ? exclude.trim() : null;
+            const pool = PATTY_MESSAGES.filter(m => !normalizedExclude || m.trim() !== normalizedExclude);
+            if (pool.length === 0) {
+                // si tras excluir no queda ninguno, volver a la lista completa
+                return PATTY_MESSAGES[Math.floor(Math.random() * PATTY_MESSAGES.length)];
+            }
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        // CHALLENGES cargado desde challenges.js (compartido)
 
         // =========================================================
         // 4. FUNCIONES DE INTERACCIÓN (GLOBALES)
@@ -612,6 +769,7 @@
             
             if (player1Name && player2Name) {
                 playClickSound();
+                // No mostrar dedicatorias aquí: la dedicatoria de Patty es un secreto reservado para el Easter Egg
                 showScreen('level-screen');
                 saveGame();
             } else {
@@ -624,16 +782,8 @@
             playClickSound();
 
             if (currentLevel === 8) { // MODO TABLERO: Redirigir a la URL del archivo de tablero
-                // Guardamos los datos de configuración en localStorage para que el otro archivo los lea
-                const configData = {
-                    player1Name, player2Name, player1Prize, player2Prize,
-                    player1SelectedColor, player2SelectedColor, CHALLENGES,
-                    player1GlobalScore, player2GlobalScore
-                };
-                localStorage.setItem('boardGameConfig', JSON.stringify(configData));
-
-                // Redirigir (o abrir en nueva ventana para simular el cambio de página)
-                window.location.href = 'juego_tablero.html';
+                // Ahora este flujo se maneja por el modal de dificultad
+                showDifficultyModal();
                 return;
             }
 
@@ -648,6 +798,55 @@
             saveGame();
         }
 
+        // ------------------ Modal Dificultad (Modo Tablero) ------------------
+        function showDifficultyModal() {
+            // Validar nombres antes de abrir modal
+            player1Name = player1NameInput.value.trim();
+            player2Name = player2NameInput.value.trim();
+            if (!player1Name || !player2Name) {
+                showAlertModal(STRINGS.alertTitle, STRINGS.alertNames);
+                return;
+            }
+            document.getElementById('difficulty-modal').classList.remove('hidden');
+        }
+
+        function closeDifficultyModal() {
+            document.getElementById('difficulty-modal').classList.add('hidden');
+        }
+
+        function confirmBoardMode() {
+            const sel = document.getElementById('difficulty-modal-select');
+            const selectedDifficulty = sel ? sel.value : 'medium';
+            // Construir config y guardar
+            const player1OptOut = document.getElementById('player1-optout') ? document.getElementById('player1-optout').checked : false;
+            const player2OptOut = document.getElementById('player2-optout') ? document.getElementById('player2-optout').checked : false;
+            const debugFlag = document.getElementById('settings-debug') ? document.getElementById('settings-debug').checked : false;
+
+            const configData = {
+                player1Name: player1NameInput.value.trim(),
+                player2Name: player2NameInput.value.trim(),
+                player1Prize: player1PrizeInput.value.trim() || STRINGS.prizePlaceholder,
+                player2Prize: player2PrizeInput.value.trim() || STRINGS.prizePlaceholder,
+                player1SelectedColor,
+                player2SelectedColor,
+                CHALLENGES,
+                player1GlobalScore,
+                player2GlobalScore,
+                difficulty: selectedDifficulty,
+                gameSettings: (function(){ const gs = JSON.parse(localStorage.getItem('gameSettings') || '{}'); gs.debug = gs.debug || debugFlag; return gs; })(),
+                pattyDedication: (function(){ try { return document.getElementById('patty-dedication') ? document.getElementById('patty-dedication').value.trim() : ''; } catch(e){ return ''; } })(),
+                pattyMessage: (function(){ const names = (player1NameInput.value + ' ' + player2NameInput.value).toLowerCase(); const ded = document.getElementById('patty-dedication') ? document.getElementById('patty-dedication').value.trim() : ''; return names.includes('patty') ? getPattyMessage(ded) : null; })(),
+                pattyPool: PATTY_MESSAGES,
+                player1OptOut,
+                player2OptOut
+            };
+            try { localStorage.setItem('boardGameConfig', JSON.stringify(configData)); }
+            catch (e) { console.warn('No se pudo guardar boardGameConfig:', e); }
+            // Cerrar modal y redirigir
+            closeDifficultyModal();
+            window.location.href = 'juego_tablero.html';
+        }
+
         function showConsentModal() {
             consentModal.classList.remove('hidden');
         }
@@ -659,11 +858,14 @@
         }
 
         function addCustomQuestion() { 
-            const question = document.getElementById('custom-question-input').value.trim();
-            if (question) {
+            const questionRaw = document.getElementById('custom-question-input').value.trim();
+            const isSensitive = document.getElementById('custom-question-sensitive') ? document.getElementById('custom-question-sensitive').checked : false;
+            if (questionRaw) {
+                const question = isSensitive ? { type: 'pregunta', text: questionRaw, tag: 'sanacion' } : questionRaw;
                 customQuestions.push(question);
                 localStorage.setItem('customQuestions', JSON.stringify(customQuestions));
                 document.getElementById('custom-question-input').value = '';
+                if (document.getElementById('custom-question-sensitive')) document.getElementById('custom-question-sensitive').checked = false;
                 showAlertModal('Éxito', '¡Pregunta o reto agregado!');
             }
         }
@@ -706,6 +908,31 @@
         function closeAlertModal() { document.getElementById('alert-modal').classList.add('hidden'); }
         function toggleSettingsModal() { document.getElementById('settings-modal').classList.toggle('hidden'); }
         function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
+
+        function applySettingsAndClose() {
+            const bonusModeEl = document.getElementById('settings-bonus-mode');
+            const bonusMode = bonusModeEl ? bonusModeEl.value : 'mix';
+            const allowDifficultyChange = document.getElementById('settings-allow-difficulty-change') ? document.getElementById('settings-allow-difficulty-change').checked : true;
+            const persistBoardState = document.getElementById('settings-persist-board-state') ? document.getElementById('settings-persist-board-state').checked : true;
+            const showToast = document.getElementById('settings-show-toast') ? document.getElementById('settings-show-toast').checked : true;
+            const hideSensitive = document.getElementById('settings-hide-sensitive') ? document.getElementById('settings-hide-sensitive').checked : false;
+            const breathingBeforeSensitive = document.getElementById('settings-breathing-before-sensitive') ? document.getElementById('settings-breathing-before-sensitive').checked : false;
+            const forceSanacionEveryEl = document.getElementById('settings-force-sanacion');
+            const forceSanacionEvery = forceSanacionEveryEl ? parseInt(forceSanacionEveryEl.value) || 0 : 0;
+
+            const gameSettings = {
+                bonusMode,
+                allowDifficultyChange,
+                persistBoardState,
+                showToast
+                , hideSensitive,
+                breathingBeforeSensitive,
+                forceSanacionEvery
+            };
+            try { localStorage.setItem('gameSettings', JSON.stringify(gameSettings)); } catch (e) { console.warn('No se pudieron guardar las opciones:', e); }
+            closeSettingsModal();
+            showAlertModal('Éxito', 'Opciones guardadas para el tablero.');
+        }
         
         function restartGame() {
             playClickSound();
@@ -729,11 +956,18 @@
 
             // Modo 1, 2, 3: Nivel fijo. Modo 7: Personalizado.
             if (currentLevel >= 1 && currentLevel <= 3) {
-                currentPool = CHALLENGES[currentLevel];
+                // Respetar la dificultad seleccionada: evitar o priorizar niveles extremos
+                let levelToUse = String(currentLevel);
+                if (difficulty === 'easy' && currentLevel === 3) levelToUse = '2';
+                if (difficulty === 'hard' && currentLevel === 1) levelToUse = '2';
+                currentPool = CHALLENGES[levelToUse];
             } else if (currentLevel === 7) {
                 currentPool = customQuestions;
             } else if (currentLevel === 0) { // Modo Variado: Mezcla todos
-                currentPool = [...CHALLENGES[1], ...CHALLENGES[2], ...CHALLENGES[3]];
+                // Ajustar mezcla según dificultad
+                if (difficulty === 'easy') currentPool = [...CHALLENGES[1], ...CHALLENGES[2]];
+                else if (difficulty === 'hard') currentPool = [...CHALLENGES[2], ...CHALLENGES[3]];
+                else currentPool = [...CHALLENGES[1], ...CHALLENGES[2], ...CHALLENGES[3]];
             } else if (currentLevel === 4) { // Solo Preguntas: Filtra solo preguntas
                 currentPool = [...CHALLENGES[1], ...CHALLENGES[2], ...CHALLENGES[3]].filter(q => q.includes('?'));
             } else if (currentLevel === 5) { // Solo Retos: Filtra solo retos
@@ -742,6 +976,9 @@
                 let level = 1;
                 if (currentRound > totalRounds / 3 * 2) level = 3;
                 else if (currentRound > totalRounds / 3) level = 2;
+                // Ajuste por dificultad
+                if (difficulty === 'easy' && level === 3) level = 2;
+                if (difficulty === 'hard' && level === 1) level = 2;
                 currentPool = CHALLENGES[level];
             }
 
@@ -757,10 +994,19 @@
             document.getElementById('action-buttons').classList.remove('hidden');
             
             const randomIndex = Math.floor(Math.random() * questionList.length);
-            const question = questionList[randomIndex];
-            questionText.textContent = question;
+            const rawQuestion = questionList[randomIndex];
+            // Helper para obtener texto desde string u objeto
+            const getQuestionText = (q) => {
+                if (!q) return '';
+                if (typeof q === 'string') return q;
+                if (typeof q === 'object') return q.text || '';
+                return String(q);
+            };
+            const questionTextStr = getQuestionText(rawQuestion);
+            questionText.textContent = questionTextStr;
             
-            usedQuestions[question] = true;
+            // Marcar pregunta usada por su texto (clave consistente)
+            usedQuestions[questionTextStr] = true;
             
             updateScoresDisplay();
             updateTurnDisplay();
@@ -943,6 +1189,8 @@
                     player2PrizeInput.value = data.player2Prize;
                     player1SelectedColor = data.player1SelectedColor;
                     player2SelectedColor = data.player2SelectedColor;
+                    // Restaurar dificultad si viene del tablero
+                    if (data.difficulty) difficulty = data.difficulty;
                     selectColor(0, player1SelectedColor, document.getElementById('player1ColorSelector'));
                     selectColor(1, player2SelectedColor, document.getElementById('player2ColorSelector'));
                     showScreen('level-screen');
@@ -953,6 +1201,114 @@
             loadGame();
         });
         
+    </script>
+    <script>
+        // =====================
+        // Editor de Preguntas (CRUD) + Import/Export
+        // =====================
+        function openQuestionsEditor() {
+            const modal = document.getElementById('questions-editor-modal');
+            if (!modal) return;
+            renderEditorList();
+            modal.classList.remove('hidden');
+        }
+        function closeQuestionsEditor() { document.getElementById('questions-editor-modal').classList.add('hidden'); }
+
+        function getCustomQuestions() {
+            try { return JSON.parse(localStorage.getItem('customQuestions') || '[]'); } catch (e) { return []; }
+        }
+
+        function renderEditorList() {
+            const list = getCustomQuestions();
+            const container = document.getElementById('editor-list');
+            container.innerHTML = '';
+            if (list.length === 0) {
+                container.innerHTML = '<p class="text-sm text-gray-500">No hay preguntas personalizadas. Agrega la primera arriba.</p>';
+                return;
+            }
+            list.forEach((q, idx) => {
+                const row = document.createElement('div');
+                row.className = 'p-2 mb-2 border rounded-md bg-gray-50 dark:bg-gray-700 flex items-start gap-2';
+                const text = typeof q === 'string' ? q : (q.text || '');
+                const tag = (typeof q === 'object' && q.tag === 'sanacion') ? ' • sanación' : '';
+                row.innerHTML = `<div class="flex-1 text-sm">${escapeHtml(text)}<div class="text-xs text-gray-400">${tag}</div></div>`;
+                const editBtn = document.createElement('button'); editBtn.textContent = 'Editar'; editBtn.className = 'px-2 py-1 rounded bg-yellow-400 text-xs';
+                const delBtn = document.createElement('button'); delBtn.textContent = 'Eliminar'; delBtn.className = 'ml-1 px-2 py-1 rounded bg-red-400 text-xs text-white';
+                editBtn.onclick = () => editQuestion(idx);
+                delBtn.onclick = () => { if (confirm('Eliminar esta pregunta?')) { removeQuestion(idx); } };
+                const actions = document.createElement('div'); actions.appendChild(editBtn); actions.appendChild(delBtn);
+                row.appendChild(actions);
+                container.appendChild(row);
+            });
+        }
+
+        function addQuestionToEditor() {
+            const text = document.getElementById('editor-new-text').value.trim();
+            const sensitive = document.getElementById('editor-new-sensitive').checked;
+            if (!text) return alert('Escribe algo primero.');
+            const list = getCustomQuestions();
+            const item = sensitive ? { type: 'pregunta', text, tag: 'sanacion' } : text;
+            list.push(item);
+            localStorage.setItem('customQuestions', JSON.stringify(list));
+            document.getElementById('editor-new-text').value = '';
+            document.getElementById('editor-new-sensitive').checked = false;
+            renderEditorList();
+        }
+
+        function editQuestion(idx) {
+            const list = getCustomQuestions();
+            if (!list[idx]) return;
+            const q = list[idx];
+            const text = typeof q === 'string' ? q : (q.text || '');
+            const sensitive = (typeof q === 'object' && q.tag === 'sanacion');
+            const newText = prompt('Editar pregunta:', text);
+            if (newText === null) return;
+            const newSensitive = confirm('Marcar como sanación? (Aceptar = Sí, Cancelar = No)');
+            const newItem = newSensitive ? { type: 'pregunta', text: newText.trim(), tag: 'sanacion' } : newText.trim();
+            list[idx] = newItem;
+            localStorage.setItem('customQuestions', JSON.stringify(list));
+            renderEditorList();
+        }
+
+        function removeQuestion(idx) {
+            const list = getCustomQuestions(); list.splice(idx, 1); localStorage.setItem('customQuestions', JSON.stringify(list)); renderEditorList();
+        }
+
+        function saveQuestionsEditor() {
+            // aplicamos a customQuestions (ya guardado localmente) y cerramos
+            closeQuestionsEditor();
+            showAlertModal('Éxito', 'Preguntas guardadas localmente.');
+        }
+
+        function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        // Import / Export boardGameConfig
+        function exportConfig() {
+            try {
+                const cfg = JSON.parse(localStorage.getItem('boardGameConfig') || '{}');
+                const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'boardGameConfig.json'; document.body.appendChild(a); a.click(); a.remove();
+                URL.revokeObjectURL(url);
+            } catch (e) { showAlertModal('Error', 'No hay configuración para exportar.'); }
+        }
+
+        function importConfigFromFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    localStorage.setItem('boardGameConfig', JSON.stringify(parsed));
+                    showAlertModal('Importado', 'Configuración importada. Vuelve al tablero para aplicar.');
+                } catch (err) { showAlertModal('Error', 'Archivo JSON inválido.'); }
+            };
+            reader.readAsText(file);
+        }
+
+        function triggerImportConfig() {
+            const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json'; inp.onchange = (ev) => { const f = ev.target.files[0]; if (f) importConfigFromFile(f); }; document.body.appendChild(inp); inp.click(); inp.remove();
+        }
     </script>
 </body>
 </html>
